@@ -1051,12 +1051,12 @@ export default function FinanceDashboard() {
                     formatter={(val:any) => `₺${Number(val).toLocaleString('tr-TR',{maximumFractionDigits:0})}`}
                   />
                   {/* Unpaid expenses – dark/black bar (bottom of stack) */}
-                  <Bar dataKey="unpaid" stackId="a" radius={[0,0,8,8]}
+                  <Bar dataKey="unpaid" stackId="a" radius={[8,8,8,8]}
                     fill={isDark ? '#fafafa' : '#18181b'}
                     name="Ödenmemiş"
                   />
                   {/* Paid expenses – light gray bar (top of stack) */}
-                  <Bar dataKey="paid" stackId="a" radius={[8,8,0,0]}
+                  <Bar dataKey="paid" stackId="a" radius={[8,8,8,8]}
                     fill={isDark ? '#3f3f46' : '#e2e8f0'}
                     name="Ödenmiş"
                   />
