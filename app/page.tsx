@@ -632,9 +632,11 @@ export default function FinanceDashboard() {
       loopCount++;
     }
 
+    const transactionsInRange: Transaction[] = [];
     transactions.forEach(t => {
       const td = parseISO(t.date);
-      if (isWithinInterval(td, { start: startD, end: endD })) {
+      if (td >= startOfMonth(startD) && td <= endOfMonth(endD)) {
+        transactionsInRange.push(t);
         const mk = format(td, 'MMM', { locale: tr });
         // Find month index for matrix
         let mIdx = -1;
@@ -664,7 +666,9 @@ export default function FinanceDashboard() {
         }
       }
     });
-
+    
+    // Add real transactions to allTxns and sort
+    allTxns.push(...transactionsInRange);
     allTxns.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const barData = Object.keys(monthlyBars).map(k => ({ name: k, value: monthlyBars[k] }));
 
