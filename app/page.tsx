@@ -1051,15 +1051,27 @@ export default function FinanceDashboard() {
                     formatter={(val:any) => `₺${Number(val).toLocaleString('tr-TR',{maximumFractionDigits:0})}`}
                   />
                   {/* Unpaid expenses – dark/black bar (bottom of stack) */}
-                  <Bar dataKey="unpaid" stackId="a" radius={[8,8,8,8]}
-                    fill={isDark ? '#fafafa' : '#18181b'}
-                    name="Ödenmemiş"
-                  />
+                  <Bar dataKey="unpaid" stackId="a" name="Ödenmemiş">
+                    {engineData.barData.map((entry, index) => (
+                      <Cell 
+                        key={`unpaid-${index}`} 
+                        fill={isDark ? '#fafafa' : '#18181b'}
+                        // @ts-ignore
+                        radius={entry.paid > 0 ? [0,0,8,8] : [8,8,8,8]} 
+                      />
+                    ))}
+                  </Bar>
                   {/* Paid expenses – light gray bar (top of stack) */}
-                  <Bar dataKey="paid" stackId="a" radius={[8,8,8,8]}
-                    fill={isDark ? '#3f3f46' : '#e2e8f0'}
-                    name="Ödenmiş"
-                  />
+                  <Bar dataKey="paid" stackId="a" name="Ödenmiş">
+                    {engineData.barData.map((entry, index) => (
+                      <Cell 
+                        key={`paid-${index}`} 
+                        fill={isDark ? '#3f3f46' : '#e2e8f0'}
+                        // @ts-ignore
+                        radius={entry.unpaid > 0 ? [8,8,0,0] : [8,8,8,8]} 
+                      />
+                    ))}
+                  </Bar>
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#64748b',fontSize:12}} dy={10}/>
                 </BarChart>
               </ResponsiveContainer>
