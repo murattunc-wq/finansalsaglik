@@ -70,6 +70,8 @@ export default function FinanceDashboard() {
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  
+  const [txnFilter, setTxnFilter] = useState<'all'|'income'|'expense'>('all');
 
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>(() => {
     try {
@@ -1062,16 +1064,33 @@ export default function FinanceDashboard() {
 
           {/* Transactions Table – Bulk Actions */}
           <div className={`lg:col-span-8 ${card} p-0 flex flex-col`}>
-            <div className="p-5 flex justify-between items-center">
+            <div className="p-5 flex flex-wrap justify-between items-center gap-3 border-b border-slate-100 dark:border-neutral-800">
               <h3 className={`font-bold text-lg tracking-tight ${title}`}>Gerçek Zamanlı İşlemler</h3>
-              {selectedTxns.size > 0 && (
-                <button 
-                  onClick={handleBulkDelete}
-                  className="px-3 py-1.5 bg-rose-100 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-md text-xs font-bold hover:opacity-90 transition-opacity flex items-center gap-1.5"
-                >
-                  <Trash2 className="w-3.5 h-3.5"/> Seçili ({selectedTxns.size}) Kaydı Sil
-                </button>
-              )}
+              <div className="flex items-center gap-3">
+                {/* Filter Tabs */}
+                <div className="flex bg-slate-100 dark:bg-neutral-800/80 p-0.5 rounded-lg border border-slate-200/60 dark:border-neutral-700/50 hidden sm:flex">
+                  <button onClick={()=>setTxnFilter('all')} className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${txnFilter==='all' ? 'bg-white dark:bg-[#18181b] shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}>Tümü</button>
+                  <button onClick={()=>setTxnFilter('income')} className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${txnFilter==='income' ? 'bg-white dark:bg-[#18181b] shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-emerald-600 dark:text-neutral-400 dark:hover:text-emerald-400'}`}>Gelir</button>
+                  <button onClick={()=>setTxnFilter('expense')} className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${txnFilter==='expense' ? 'bg-white dark:bg-[#18181b] shadow-sm text-rose-600 dark:text-rose-400' : 'text-slate-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400'}`}>Gider</button>
+                </div>
+                {selectedTxns.size > 0 && (
+                  <button 
+                    onClick={handleBulkDelete}
+                    className="px-3 py-1.5 bg-rose-100 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-md text-xs font-bold hover:opacity-90 transition-opacity flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5"/> Seçili ({selectedTxns.size}) Kaydı Sil
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Mobile filter view */}
+            <div className="sm:hidden px-5 py-3 border-b border-slate-100 dark:border-neutral-800 bg-slate-50 dark:bg-[#09090b]">
+              <div className="flex bg-slate-200 dark:bg-neutral-800 p-1 rounded-lg w-full">
+                <button onClick={()=>setTxnFilter('all')} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='all' ? 'bg-white dark:bg-[#18181b] shadow text-slate-900 dark:text-white' : 'text-slate-500'}`}>Tümü</button>
+                <button onClick={()=>setTxnFilter('income')} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='income' ? 'bg-white dark:bg-[#18181b] shadow text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>Gelir</button>
+                <button onClick={()=>setTxnFilter('expense')} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='expense' ? 'bg-white dark:bg-[#18181b] shadow text-rose-600 dark:text-rose-400' : 'text-slate-500'}`}>Gider</button>
+              </div>
             </div>
             <div className="overflow-y-auto max-h-[420px]">
               <table className="w-full text-sm text-left">
@@ -1092,10 +1111,10 @@ export default function FinanceDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-neutral-800/60">
-                  {engineData.allTxns.length === 0 && (
-                    <tr><td colSpan={5} className={`px-5 py-8 text-center ${muted}`}>Seçili aralıkta kayıt yok.</td></tr>
+                  {engineData.allTxns.filter(t => txnFilter === 'all' || t.type === txnFilter).length === 0 && (
+                    <tr><td colSpan={5} className={`px-5 py-8 text-center ${muted}`}>Seçili filtreye uygun kayıt yok.</td></tr>
                   )}
-                  {engineData.allTxns.map(txn => (
+                  {engineData.allTxns.filter(t => txnFilter === 'all' || t.type === txnFilter).map(txn => (
                     <tr key={txn.id} className="hover:bg-slate-50/70 dark:hover:bg-neutral-900/40 transition-colors group">
                       <td className="px-4 py-3.5">
                         <input 
