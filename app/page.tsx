@@ -28,32 +28,15 @@ type Transaction = { id: string; name: string; type: 'income'|'expense'|'transfe
 /* ============================================================
    CONSTANTS
    ============================================================ */
-const INIT_RECURRING: RecurringItem[] = [
-  { id: '1', type: 'income', name: 'Freelance Projesi', amount: 15000, category: 'Ek İş', color: '#10b981', repeatUntil: '2026-07-01T00:00:00Z', date: '2026-06-01T00:00:00Z' },
-  { id: '2', type: 'income', name: 'Kira', amount: 40000, category: 'Kira', color: '#10b981', date: '2026-04-01T00:00:00Z' },
-  { id: '3', type: 'income', name: 'Maaş', amount: 130000, category: 'Maaş', color: '#10b981', date: '2026-04-01T00:00:00Z' },
-  { id: '4', type: 'income', name: 'Temettü', amount: 27000, category: 'Yatırım', color: '#10b981', repeatUntil: '2026-10-01T00:00:00Z', date: '2026-04-01T00:00:00Z' },
-  { id: '5', type: 'expense', name: 'Market Alışverişi', amount: 3500, category: 'Market', color: '#f43f5e', repeatUntil: '2026-07-01T00:00:00Z', date: '2026-06-01T00:00:00Z' },
-  { id: '6', type: 'expense', name: 'Kredi Kartları (Taban)', amount: 65000, category: 'Kredi Kartı', color: '#f43f5e', date: '2026-04-01T00:00:00Z' },
-  { id: '7', type: 'expense', name: 'Abonelikler', amount: 3500, category: 'Abonelik', color: '#f43f5e', date: '2026-04-01T00:00:00Z' },
-  { id: '8', type: 'expense', name: 'Vergi ödemesi', amount: 2000, category: 'Vergi', color: '#f43f5e', date: '2026-04-01T00:00:00Z' },
-];
+const INIT_RECURRING: RecurringItem[] = [];
 
 const INIT_INSTALLMENTS: InstallmentItem[] = [];
 
-const INIT_TRANSACTIONS: Transaction[] = [
-  { id: 't1', type: 'expense', name: 'deneme4', amount: 120000, date: '2026-06-15T00:00:00Z', avatarPrefix: 'd' },
-  { id: 't2', type: 'expense', name: 'deneme3', amount: 110000, date: '2026-06-15T00:00:00Z', avatarPrefix: 'd' }
-];
+const INIT_TRANSACTIONS: Transaction[] = [];
 
-const INIT_OVERRIDES: Record<string, number> = {
-  'proj-3-2026-04': 145000,
-  'proj-4-2026-09': 27001
-};
+const INIT_OVERRIDES: Record<string, number> = {};
 
-const INIT_ORDERS: Record<string, number> = {
-  'rec-1': 1, 'rec-2': 3, 'rec-3': 4, 'rec-4': 2, 'txn-t1': 5, 'rec-5': 6, 'rec-6': 7, 'rec-8': 8, 'rec-7': 9, 'txn-t2': 10
-};
+const INIT_ORDERS: Record<string, number> = {};
 
 const DONUT_COLORS      = ['#18181b', '#52525b', '#a1a1aa', '#e4e4e7'];
 const DARK_DONUT_COLORS = ['#fafafa', '#a1a1aa', '#52525b', '#27272a'];
@@ -361,6 +344,28 @@ export default function FinanceDashboard() {
     };
     reader.readAsText(file);
     e.target.value = '';
+  };
+
+  const handleResetAllData = () => {
+    if (confirm('Tüm verilerinizi (sabit gelirler, giderler, bildirimler vs.) silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) {
+      setBaseCapital(0);
+      setSavingGoal(0);
+      setRecurring([]);
+      setInstallments([]);
+      setTransactions([]);
+      setOverrides({});
+      setPaidStatus({});
+      setCustomOrders({});
+      setHiddenProjections([]);
+      setDateRange({ from: undefined, to: undefined });
+      
+      // Force clear localStorage fallback
+      if (typeof window !== 'undefined') {
+        const keys = ['fcv2_baseCapital', 'fcv2_savingGoal', 'fcv2_recurring', 'fcv2_installments', 'fcv2_transactions', 'fcv2_overrides', 'fcv2_paidStatus', 'fcv2_customOrders', 'fcv2_hiddenProjections', 'fcv2_dateRange'];
+        keys.forEach(k => localStorage.removeItem(k));
+      }
+      setActiveTxnMenu(null);
+    }
   };
 
   const handleToggleTxnSelect = (id: string) => {
@@ -686,24 +691,25 @@ export default function FinanceDashboard() {
         {/* ── PAGE HEADER ── */}
         <div className="flex flex-col gap-3">
           <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${title}`}>Finansal Kokpit</h1>
-          <div className="flex flex-wrap gap-2 items-center relative">
+          <div className="flex flex-wrap gap-2 items-center">
             {/* ── COMPACT CALENDAR TRIGGER ── */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setIsCalendarOpen(prev => !prev); }}
-              className={`flex items-center gap-2 px-3 py-2 ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors`}
-            >
-              <CalendarDays className="w-4 h-4" />
-              {dateRange.from && dateRange.to
-                ? `${format(dateRange.from,'dd MMM',{locale:tr})} – ${format(dateRange.to,'dd MMM yy',{locale:tr})}`
-                : 'Tarih Seçin'}
-            </button>
+            <div className="relative">
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsCalendarOpen(prev => !prev); }}
+                className={`flex items-center gap-2 px-3 py-2 ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors`}
+              >
+                <CalendarDays className="w-4 h-4" />
+                {dateRange.from && dateRange.to
+                  ? `${format(dateRange.from,'dd MMM',{locale:tr})} – ${format(dateRange.to,'dd MMM yy',{locale:tr})}`
+                  : 'Tarih Seçin'}
+              </button>
 
-            {/* ── COMPACT CALENDAR DROPDOWN ── */}
-            {isCalendarOpen && (
-              <div
-                onClick={e => e.stopPropagation()}
-                className={`absolute top-full left-0 sm:right-0 sm:left-auto mt-2 z-50 ${card} shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800`}
-                style={{ width: 310 }}
+              {/* ── COMPACT CALENDAR DROPDOWN ── */}
+              {isCalendarOpen && (
+                <div
+                  onClick={e => e.stopPropagation()}
+                  className={`absolute top-full left-0 mt-2 z-50 ${card} shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800`}
+                  style={{ width: 310 }}
               >
                 <style>{`
                   .fc-cal .rdp { margin: 0; font-size: 13px; }
@@ -727,6 +733,16 @@ export default function FinanceDashboard() {
                 </div>
               </div>
             )}
+          </div>
+
+            {/* Reset Data */}
+            <button
+              onClick={handleResetAllData}
+              title="Tüm verileri sil"
+              className={`flex items-center gap-1.5 px-2.5 py-2 ${card} text-sm text-rose-500 font-medium hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors rounded-md border border-rose-200 dark:border-rose-900/50`}
+            >
+              <Trash2 className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Verileri Sıfırla</span>
+            </button>
 
             {/* XML Export */}
             <button
