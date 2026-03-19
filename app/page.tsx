@@ -264,6 +264,12 @@ export default function FinanceDashboard() {
     setActiveTxnMenu(null);
   };
 
+  const handleTxnDeleteByName = (name: string) => {
+    setTransactions(prev => prev.filter(t => t.name !== name));
+    setActiveMatrixMenu(null);
+  };
+
+
   const handleRecurringDelete = (id: string) => {
     setRecurring(prev => prev.filter(r => r.id !== id));
     setActiveTxnMenu(null);
@@ -793,7 +799,12 @@ export default function FinanceDashboard() {
             {/* Search Input */}
             <div className="relative w-full max-w-[160px] sm:max-w-xs transition-all">
               <Search className={`absolute left-3 top-2.5 h-4 w-4 ${muted}`} />
-              <input placeholder="Ara..." className={`w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-neutral-900 rounded-md text-sm ${title} focus:outline-none border border-transparent focus:border-slate-300 dark:focus:border-neutral-700 transition-colors`} />
+              <input 
+                placeholder="Ara..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className={`w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-neutral-900 rounded-md text-sm ${title} focus:outline-none border border-transparent focus:border-slate-300 dark:focus:border-neutral-700 transition-colors`} 
+              />
             </div>
           </div>
 
@@ -1443,8 +1454,12 @@ export default function FinanceDashboard() {
                               <button onClick={()=>handleOrderChange(item.id, 'down')} className="px-3 py-2 text-xs text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 flex items-center w-full font-medium whitespace-nowrap border-b border-slate-100 dark:border-neutral-800">
                                 <span>↓ Aşağı Taşı</span>
                               </button>
-                              {item.isRecurring && (
+                              {item.isRecurring ? (
                                 <button onClick={()=>handleRecurringDelete(item.baseItem.id)} className="px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 w-full font-medium whitespace-nowrap">
+                                  <Trash2 className="w-3.5 h-3.5"/> Sil
+                                </button>
+                              ) : (
+                                <button onClick={()=>handleTxnDeleteByName(item.name)} className="px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 w-full font-medium whitespace-nowrap">
                                   <Trash2 className="w-3.5 h-3.5"/> Sil
                                 </button>
                               )}
