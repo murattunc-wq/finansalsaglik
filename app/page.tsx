@@ -600,17 +600,26 @@ export default function FinanceDashboard() {
         }
 
         if (!isHidden && !effectivelyOutOfBounds && mappedAmt > 0) {
+          // Determine if this recurring expense is already paid this month (dueDay passed)
+          const thisMonthNow = new Date();
+          const isThisMonth = currentD.getMonth() === thisMonthNow.getMonth() && currentD.getFullYear() === thisMonthNow.getFullYear();
+          const isPaidThisMonth = isThisMonth && rec.type === 'expense' && (rec.dueDay || 1) < thisMonthNow.getDate();
+          
           if (rec.type === 'income') { 
             totalIncome += mappedAmt; 
             monthlyIncome[mk] = (monthlyIncome[mk]||0) + mappedAmt;
             incomeSources[rec.id] = (incomeSources[rec.id]||0) + mappedAmt;
           }
-          else {
+          else if (!isPaidThisMonth) {
+            // Only count toward expenses if NOT already paid this month
             totalExpense += mappedAmt;
             expenseCategories[rec.category] = (expenseCategories[rec.category]||0) + mappedAmt;
             monthlyBars[mk] += mappedAmt;
           }
-          allTxns.push({ id: txnId, name: rec.name, type: rec.type, amount: mappedAmt, date: currentD.toISOString(), isRecurringBase: true, avatarPrefix: rec.name.charAt(0) });
+          // Only push to transaction list if income OR not-yet-paid expense OR it's a non-current month
+          if (rec.type === 'income' || !isPaidThisMonth || !isThisMonth) {
+            allTxns.push({ id: txnId, name: rec.name, type: rec.type, amount: mappedAmt, date: currentD.toISOString(), isRecurringBase: true, avatarPrefix: rec.name.charAt(0) });
+          }
         }
       });
 
