@@ -83,7 +83,7 @@ export default function FinanceDashboard() {
   });
 
   /* ---- Cell editing ---- */
-  const [editingCell, setEditingCell] = useState<{ monthIdx: number; itemId: string }|null>(null);
+  const [editingCell, setEditingCell] = useState<{ monthIdx: number; itemId: string; isRecurring?: boolean; txnType?: 'income'|'expense' }|null>(null);
   const [editValue,   setEditValue]   = useState('');
 
   /* ---- Rule name editing ---- */
@@ -211,11 +211,39 @@ export default function FinanceDashboard() {
 
   const handleCellSave = () => {
     if (!editingCell) return;
-    const val = Number(editValue.replace(/[^0-9.]/g, ''));
-    if (!isNaN(val) && val >= 0) {
+    const val = Number(editValue.replace(/[^0-9.-]/g, ''));
+    if (!isNaN(val)) {
       const mDate = parse(engineData.matrixColumns[editingCell.monthIdx], 'MMM yy', new Date(), { locale: tr });
-      const projId = `proj-${editingCell.itemId}-${format(mDate, 'yyyy-MM')}`;
-      setOverrides(prev => ({ ...prev, [projId]: val }));
+      
+      if (editingCell.isRecurring) {
+        if (val >= 0) {
+          const projId = `proj-${editingCell.itemId}-${format(mDate, 'yyyy-MM')}`;
+          setOverrides(prev => ({ ...prev, [projId]: val }));
+        }
+      } else {
+        const targetMonthStart = startOfMonth(mDate);
+        const targetMonthEnd = endOfMonth(mDate);
+        
+        setTransactions(prev => {
+          let newTxns = prev.filter(t => {
+            const td = parseISO(t.date);
+            const matches = t.name === editingCell.itemId && td >= targetMonthStart && td <= targetMonthEnd && !t.isRecurringBase;
+            return !matches;
+          });
+          
+          if (val > 0) {
+            newTxns = [{
+              id: `t-${Date.now()}`,
+              name: editingCell.itemId,
+              type: editingCell.txnType || 'expense',
+              amount: val,
+              date: mDate.toISOString(),
+              avatarPrefix: editingCell.itemId.charAt(0).toUpperCase()
+            }, ...newTxns];
+          }
+          return newTxns;
+        });
+      }
     }
     setEditingCell(null);
     setEditValue('');
@@ -1324,35 +1352,33 @@ export default function FinanceDashboard() {
                     {/* Matrix Data Cells */}
                     {engineData.matrixColumns.map((month, idx) => {
                       const val = item.cells[idx];
-                      const isEditing = item.isRecurring && editingCell?.monthIdx===idx && editingCell?.itemId===item.baseItem.id;
+                      const isEditing = editingCell?.monthIdx===idx && editingCell?.itemId===(item.isRecurring ? item.baseItem.id : item.name);
                       return (
                         <td key={month} className="px-4 py-4 text-right">
                           <div className="relative h-6 flex justify-end items-center">
                             {isEditing ? (
-                                <input autoFocus type="number" value={editValue}
-                                  onChange={e=>setEditValue(e.target.value)}
-                                  onFocus={e=>e.target.select()}
-                                  onBlur={handleCellSave}
-                                  onKeyDown={e=>{if(e.key==='Enter')handleCellSave();if(e.key==='Escape'){setEditingCell(null);setEditValue('');}}}
-                                  className="absolute right-0 w-24 text-right bg-white dark:bg-neutral-900 border border-indigo-500 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 z-10 [&::-webkit-inner-spin-button]:appearance-none [appearance:textfield]"
-                                />
+                              <input autoFocus type="text"
+                                className={`w-[80px] bg-white dark:bg-[#18181b] border border-indigo-500 rounded px-2 py-0.5 text-xs text-right focus:outline-none`}
+                                value={editValue}
+                                onChange={e=>setEditValue(e.target.value)}
+                                onBlur={handleCellSave}
+                                onKeyDown={e=>{if(e.key==='Enter')handleCellSave();if(e.key==='Escape')setEditingCell(null);}}
+                              />
                             ) : (
-                              val ? (
-                                <span 
-                                  onClick={()=>{if(item.isRecurring){setEditingCell({monthIdx:idx,itemId:item.baseItem.id});setEditValue(val.toString());}}} 
-                                  className={`px-1 py-0.5 rounded transition-colors text-sm ${muted} ${item.isRecurring ? 'cursor-text hover:text-slate-800 dark:hover:text-neutral-200' : ''}`}
-                                >
-                                  ₺{val.toLocaleString('tr-TR')}
-                                </span>
-                              ) : (
-                                <span 
-                                  title={item.isRecurring ? "Değer atamak için tıklayın" : ""}
-                                  onClick={()=>{if(item.isRecurring){setEditingCell({monthIdx:idx,itemId:item.baseItem.id});setEditValue('');}}} 
-                                  className={`text-sm ${muted} opacity-40 hover:opacity-100 transition-opacity px-2 py-1 ${item.isRecurring ? 'cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400' : ''}`}
-                                >
-                                  -
-                                </span>
-                              )
+                              <span 
+                                onClick={() => {
+                                  setEditingCell({ 
+                                    monthIdx: idx, 
+                                    itemId: item.isRecurring ? item.baseItem.id : item.name,
+                                    isRecurring: item.isRecurring,
+                                    txnType: item.type
+                                  });
+                                  setEditValue(val !== undefined ? val.toString() : '');
+                                }}
+                                className={`font-semibold cursor-pointer px-2 py-1 -mr-2 rounded transition-colors ${val!==undefined ? 'hover:bg-slate-200 dark:hover:bg-neutral-800' : 'text-slate-300 dark:text-neutral-700 hover:text-slate-400'}`}
+                              >
+                                {val !== undefined ? `₺${Math.abs(val).toLocaleString('tr-TR')}` : '-'}
+                              </span>
                             )}
                           </div>
                         </td>
