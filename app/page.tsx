@@ -1139,7 +1139,7 @@ export default function FinanceDashboard() {
               <table className="w-full text-sm text-left table-fixed">
                 <thead className={`text-xs font-semibold uppercase tracking-wider border-b border-slate-100 dark:border-neutral-800 sticky top-0 bg-white dark:bg-[#09090b] z-10`}>
                   <tr className="group">
-                    <th className="px-4 py-3 w-10">
+                    <th className="px-4 py-3 w-8">
                       <input 
                         type="checkbox" 
                         className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.size>0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
@@ -1147,10 +1147,10 @@ export default function FinanceDashboard() {
                         onChange={() => handleToggleSelectAll(engineData.allTxns.map(t=>t.id))}
                       />
                     </th>
-                    <th className={`px-2 py-3 ${muted} w-4/12`}>İşlem Adı</th>
-                    <th className={`px-5 py-3 ${muted} w-3/12`}>Tarih</th>
-                    <th className={`px-5 py-3 ${muted} w-2/12`}>Tür</th>
-                    <th className={`px-5 py-3 text-right ${muted} w-3/12`}>Tutar</th>
+                    <th className={`px-2 py-3 ${muted} w-5/12 sm:w-4/12`}>İşlem Adı</th>
+                    <th className={`px-2 py-3 ${muted} w-4/12 sm:w-3/12`}>Tarih</th>
+                    <th className={`hidden sm:table-cell px-5 py-3 ${muted} w-2/12`}>Tür</th>
+                    <th className={`px-2 py-3 text-right ${muted} w-3/12`}>Tutar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-neutral-800/60">
@@ -1179,12 +1179,12 @@ export default function FinanceDashboard() {
                         </div>
                       </td>
                       <td className={`px-3 py-3.5 ${muted} text-xs font-medium whitespace-nowrap`}>{format(new Date(txn.date),'dd MMM yyyy',{locale:tr})}</td>
-                      <td className="px-5 py-3.5">
+                      <td className={`hidden sm:table-cell px-5 py-3.5`}>
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${txn.type==='income'?'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
                           {txn.type==='income'?'Gelir':'Gider'}
                         </span>
                       </td>
-                      <td className={`px-5 py-3.5 text-right font-semibold ${txn.type==='income'?'text-emerald-600 dark:text-emerald-400':title}`}>
+                      <td className={`px-2 py-3.5 text-right font-semibold tabular-nums ${txn.type==='income'?'text-emerald-600 dark:text-emerald-400':title}`}>
                         <div className="flex items-center justify-end gap-1">
                           ₺{Math.abs(txn.amount).toLocaleString('tr-TR',{maximumFractionDigits:0})}
                           
