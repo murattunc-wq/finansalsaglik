@@ -125,6 +125,59 @@ export default function FinanceDashboard() {
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_customOrders',      JSON.stringify(customOrders)); }, [customOrders, mounted]);
   useEffect(() => { if (mounted && dateRange?.from) localStorage.setItem('fcv2_dateRange', JSON.stringify({ from: dateRange.from?.toISOString(), to: dateRange.to?.toISOString() })); }, [dateRange, mounted]);
 
+  /* ---- Sync with DB ---- */
+  const [isDataLoadedFromDB, setIsDataLoadedFromDB] = useState(false);
+
+  useEffect(() => {
+    if (!sessionUser?.email) return;
+    let isStale = false;
+    fetch('/api/user/data').then(res => res.json()).then(res => {
+      if (isStale) return;
+      if (res.data && Object.keys(res.data).length > 0) {
+        const d = res.data;
+        if (d.baseCapital !== undefined) setBaseCapital(d.baseCapital);
+        if (d.savingGoal !== undefined) setSavingGoal(d.savingGoal);
+        if (d.recurring) setRecurring(d.recurring);
+        if (d.installments) setInstallments(d.installments);
+        if (d.transactions) setTransactions(d.transactions);
+        if (d.overrides) setOverrides(d.overrides);
+        if (d.hiddenProjections) setHiddenProjections(d.hiddenProjections);
+        if (d.paidStatus) setPaidStatus(d.paidStatus);
+        if (d.customOrders) setCustomOrders(d.customOrders);
+      }
+      setIsDataLoadedFromDB(true);
+    }).catch(err => {
+      console.error('Failed to load DB data', err);
+      setIsDataLoadedFromDB(true);
+    });
+    return () => { isStale = true; };
+  }, [sessionUser?.email]);
+
+  useEffect(() => {
+    if (!isDataLoadedFromDB || !sessionUser?.email) return;
+    const saveDataToDB = async () => {
+      const payload = {
+        baseCapital, savingGoal, recurring, installments, transactions,
+        overrides, hiddenProjections, paidStatus, customOrders
+      };
+      try {
+        await fetch('/api/user/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.error('Failed to sync to DB', err);
+      }
+    };
+    const timer = setTimeout(saveDataToDB, 1500);
+    return () => clearTimeout(timer);
+  }, [
+    baseCapital, savingGoal, recurring, installments, transactions,
+    overrides, hiddenProjections, paidStatus, customOrders,
+    isDataLoadedFromDB, sessionUser?.email
+  ]);
+
   /* ============================================================
      HANDLERS
      ============================================================ */
@@ -365,6 +418,17 @@ export default function FinanceDashboard() {
         keys.forEach(k => localStorage.removeItem(k));
       }
       setActiveTxnMenu(null);
+
+      // Force clear DB immediately
+      if (sessionUser?.email) {
+        fetch('/api/user/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            baseCapital: 0, savingGoal: 0, recurring: [], installments: [], transactions: [], overrides: {}, paidStatus: {}, customOrders: {}, hiddenProjections: []
+          })
+        }).catch(() => {});
+      }
     }
   };
 
