@@ -97,8 +97,8 @@ export default function FinanceDashboard() {
   const [goalInputValue,  setGoalInputValue]   = useState('');
 
   /* ---- Persisted data state ---- */
-  const [baseCapital,   setBaseCapital]   = useState<number>(() => loadLS('fcv2_baseCapital',   634000));
-  const [savingGoal,    setSavingGoal]    = useState<number>(() => loadLS('fcv2_savingGoal',    2000000));
+  const [baseCapital,   setBaseCapital]   = useState<number>(() => loadLS('fcv2_baseCapital',   0));
+  const [savingGoal,    setSavingGoal]    = useState<number>(() => loadLS('fcv2_savingGoal',    0));
   const [recurring,     setRecurring]     = useState<RecurringItem[]>(() => loadLS('fcv2_recurring',     INIT_RECURRING));
   const [installments,  setInstallments]  = useState<InstallmentItem[]>(() => loadLS('fcv2_installments',  INIT_INSTALLMENTS));
   const [transactions,  setTransactions]  = useState<Transaction[]>(() => loadLS('fcv2_transactions',  INIT_TRANSACTIONS));
@@ -1408,7 +1408,7 @@ export default function FinanceDashboard() {
                     {engineData.matrixColumns.map((month, idx) => {
                       const val = item.cells[idx];
                       // Check if this is the current month column
-                      const colDate = parse(month, 'MMM YY', new Date(), { locale: tr });
+                      const colDate = parse(month, 'MMM yy', new Date(), { locale: tr });
                       const now = new Date();
                       const isCurrentMonthCol = colDate.getMonth() === now.getMonth() && colDate.getFullYear() === now.getFullYear();
                       // If it's a recurring expense and dueDay already passed this month → treat as paid/locked
