@@ -1033,9 +1033,9 @@ export default function FinanceDashboard() {
                       <Cell 
                         key={`cell-${index}`} 
                         fill={entry.isPast 
-                          ? (isDark ? '#3f3f46' : '#cbd5e1') 
+                          ? (isDark ? '#52525b' : '#e2e8f0') 
                           : entry.isCurrent 
-                            ? (isDark ? '#a1a1aa' : '#64748b') 
+                            ? (isDark ? '#a1a1aa' : '#94a3b8') 
                             : (isDark ? '#fafafa' : '#18181b')
                         }
                       />
@@ -1158,16 +1158,18 @@ export default function FinanceDashboard() {
                           onChange={() => handleToggleTxnSelect(txn.id)}
                         />
                       </td>
-                      <td className="px-2 py-3.5 flex items-center gap-3">
-                        <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-bold text-sm ${txn.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
-                          {txn.avatarPrefix}
-                        </div>
-                        <div className="min-w-0">
-                          <span className={`font-semibold ${title} block leading-tight truncate`}>{txn.name}</span>
-                          {txn.isRecurringBase && <span className={`text-[10px] uppercase font-bold ${muted} tracking-wider`}>Sistem Oto.</span>}
+                      <td className="px-2 py-3.5">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-bold text-sm ${txn.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
+                            {txn.avatarPrefix}
+                          </div>
+                          <div className="min-w-0 overflow-hidden">
+                            <span className={`font-semibold ${title} block leading-tight truncate max-w-[90px] sm:max-w-full`}>{txn.name}</span>
+                            {txn.isRecurringBase && <span className={`text-[10px] uppercase font-bold ${muted} tracking-wider`}>Sistem Oto.</span>}
+                          </div>
                         </div>
                       </td>
-                      <td className={`px-5 py-3.5 ${muted} text-xs font-medium whitespace-nowrap`}>{format(new Date(txn.date),'dd MMM yyyy',{locale:tr})}</td>
+                      <td className={`px-3 py-3.5 ${muted} text-xs font-medium whitespace-nowrap`}>{format(new Date(txn.date),'dd MMM yyyy',{locale:tr})}</td>
                       <td className="px-5 py-3.5">
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${txn.type==='income'?'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
                           {txn.type==='income'?'Gelir':'Gider'}
@@ -1405,7 +1407,13 @@ export default function FinanceDashboard() {
                     {/* Matrix Data Cells */}
                     {engineData.matrixColumns.map((month, idx) => {
                       const val = item.cells[idx];
-                      const isEditing = editingCell?.monthIdx===idx && editingCell?.itemId===(item.isRecurring ? item.baseItem.id : item.name);
+                      // Check if this is the current month column
+                      const colDate = parse(month, 'MMM YY', new Date(), { locale: tr });
+                      const now = new Date();
+                      const isCurrentMonthCol = colDate.getMonth() === now.getMonth() && colDate.getFullYear() === now.getFullYear();
+                      // If it's a recurring expense and dueDay already passed this month → treat as paid/locked
+                      const isCurrentMonthPaid = item.isRecurring && item.type === 'expense' && isCurrentMonthCol && (item.baseItem?.dueDay || 1) < now.getDate();
+                      const isEditing = !isCurrentMonthPaid && editingCell?.monthIdx===idx && editingCell?.itemId===(item.isRecurring ? item.baseItem.id : item.name);
                       return (
                         <td key={month} className="px-4 py-4 text-right">
                           <div className="relative h-6 flex justify-end items-center">
@@ -1420,6 +1428,7 @@ export default function FinanceDashboard() {
                             ) : (
                               <span 
                                 onClick={() => {
+                                  if (isCurrentMonthPaid) return;
                                   setEditingCell({ 
                                     monthIdx: idx, 
                                     itemId: item.isRecurring ? item.baseItem.id : item.name,
@@ -1428,7 +1437,13 @@ export default function FinanceDashboard() {
                                   });
                                   setEditValue(val !== undefined ? val.toString() : '');
                                 }}
-                                className={`font-semibold cursor-pointer px-2 py-1 -mr-2 rounded transition-colors ${val!==undefined ? 'hover:bg-slate-200 dark:hover:bg-neutral-800' : 'text-slate-300 dark:text-neutral-700 hover:text-slate-400'}`}
+                                className={`font-semibold px-2 py-1 -mr-2 rounded transition-colors ${
+                                  isCurrentMonthPaid
+                                    ? 'text-slate-300 dark:text-neutral-600 line-through cursor-default'
+                                    : val!==undefined
+                                      ? 'cursor-pointer hover:bg-slate-200 dark:hover:bg-neutral-800'
+                                      : 'text-slate-300 dark:text-neutral-700 hover:text-slate-400 cursor-pointer'
+                                }`}
                               >
                                 {val !== undefined ? `₺${Math.abs(val).toLocaleString('tr-TR')}` : '-'}
                               </span>
