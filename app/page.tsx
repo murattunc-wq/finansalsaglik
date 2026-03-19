@@ -855,11 +855,17 @@ export default function FinanceDashboard() {
 
               {/* ── COMPACT CALENDAR DROPDOWN ── */}
               {isCalendarOpen && (
-                <div
-                  onClick={e => e.stopPropagation()}
-                  className={`absolute top-full right-0 sm:right-auto sm:left-0 mt-2 z-50 ${card} shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800`}
-                  style={{ width: 310 }}
-                >
+                <>
+                  {/* Mobile Backdrop */}
+                  <div 
+                    className="fixed inset-0 bg-black/40 dark:bg-black/60 z-[60] sm:hidden backdrop-blur-sm" 
+                    onClick={(e) => { e.stopPropagation(); setIsCalendarOpen(false); }}
+                  />
+                  <div
+                    onClick={e => e.stopPropagation()}
+                    className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 sm:translate-x-0 sm:translate-y-0 sm:absolute sm:top-full sm:left-0 sm:right-auto mt-0 sm:mt-2 z-[70] sm:z-50 ${card} shadow-2xl sm:shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800`}
+                    style={{ width: 310 }}
+                  >
                   <style>{`
                     .fc-cal .rdp { margin: 0; font-size: 13px; }
                     .fc-cal .rdp-months { padding: 12px; }
@@ -881,6 +887,7 @@ export default function FinanceDashboard() {
                     <button onClick={() => setIsCalendarOpen(false)} className={`px-4 py-1.5 rounded-md text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition-opacity`}>Uygula</button>
                   </div>
                 </div>
+                </>
               )}
             </div>
 
