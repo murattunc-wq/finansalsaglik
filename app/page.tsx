@@ -546,9 +546,10 @@ export default function FinanceDashboard() {
   const engineData = useMemo(() => {
     let totalIncome = 0, totalExpense = 0;
     const expenseCategories: Record<string,number> = {};
-    const monthlyBars: Record<string,number>       = {};
-    const monthlyIncome: Record<string,number>     = {};
-    const incomeSources: Record<string,number>     = {};
+    const monthlyBarsUnpaid: Record<string,number>  = {};
+    const monthlyBarsPaid:   Record<string,number>  = {};
+    const monthlyIncome: Record<string,number>      = {};
+    const incomeSources: Record<string,number>      = {};
     
     // Projections & Transactions
     const allTxns: Transaction[] = [...transactions];
@@ -570,7 +571,8 @@ export default function FinanceDashboard() {
 
     while (currentD <= startOfMonth(endD) && loopCount < 60) {
       const mk = format(currentD, 'MMM', { locale: tr });
-      monthlyBars[mk] = monthlyBars[mk] || 0;
+      monthlyBarsUnpaid[mk] = monthlyBarsUnpaid[mk] || 0;
+      monthlyBarsPaid[mk]   = monthlyBarsPaid[mk]   || 0;
 
       recurring.forEach(rec => {
         // Build projId accurately for the current month
@@ -610,11 +612,15 @@ export default function FinanceDashboard() {
             monthlyIncome[mk] = (monthlyIncome[mk]||0) + mappedAmt;
             incomeSources[rec.id] = (incomeSources[rec.id]||0) + mappedAmt;
           }
-          else if (!isPaidThisMonth) {
-            // Only count toward expenses if NOT already paid this month
+          else if (isPaidThisMonth) {
+            // Paid this month → track separately (shown as light gray in chart), NOT deducted from balance
+            monthlyBarsPaid[mk] += mappedAmt;
+          }
+          else {
+            // Unpaid → counts toward totalExpense and shown as dark bar
             totalExpense += mappedAmt;
             expenseCategories[rec.category] = (expenseCategories[rec.category]||0) + mappedAmt;
-            monthlyBars[mk] += mappedAmt;
+            monthlyBarsUnpaid[mk] += mappedAmt;
           }
           // Only push to transaction list if income OR not-yet-paid expense OR it's a non-current month
           if (rec.type === 'income' || !isPaidThisMonth || !isThisMonth) {
@@ -632,7 +638,7 @@ export default function FinanceDashboard() {
         if (monthsPassed >= 0 && monthsPassed < totalInstallments && !hiddenProjections.includes(txnId)) {
           totalExpense += inst.monthly;
           expenseCategories['Taksitler'] = (expenseCategories['Taksitler']||0) + inst.monthly;
-          monthlyBars[mk] += inst.monthly;
+          monthlyBarsUnpaid[mk] += inst.monthly;
           allTxns.push({ id: txnId, name: `${inst.name} (Taksit)`, type: 'expense', amount: inst.monthly, date: currentD.toISOString(), isRecurringBase: true, avatarPrefix: inst.name.charAt(0) });
         }
       });
@@ -663,7 +669,7 @@ export default function FinanceDashboard() {
         if (t.type === 'expense') {
           totalExpense += t.amount;
           expenseCategories['Tek Seferlik'] = (expenseCategories['Tek Seferlik']||0) + t.amount;
-          if (monthlyBars[mk] !== undefined) monthlyBars[mk] += t.amount;
+          if (monthlyBarsUnpaid[mk] !== undefined) monthlyBarsUnpaid[mk] += t.amount;
         }
 
         if (mIdx !== -1 && t.type !== 'transfer') {
@@ -719,12 +725,19 @@ export default function FinanceDashboard() {
     const unpaidCount = activeListWithStatus.filter(l => !l.isPaid).length;
     const unpaidTotal = activeListWithStatus.filter(l => !l.isPaid).reduce((s,l) => s + l.amount, 0);
     
-    // Add isPast to barData so chart can differentiate past months 
-    const barData = Object.keys(monthlyBars).map(k => {
+    // Build barData with paid/unpaid split for stacked bar chart
+    const barData = Object.keys(monthlyBarsUnpaid).map(k => {
       const monthDate = parse(k, 'MMM', new Date(), { locale: tr });
       const isPast = monthDate.getMonth() < today.getMonth() || monthDate.getFullYear() < today.getFullYear();
       const isCurrent = monthDate.getMonth() === today.getMonth();
-      return { name: k, value: monthlyBars[k], isPast, isCurrent };
+      return { 
+        name: k, 
+        unpaid: monthlyBarsUnpaid[k] || 0,
+        paid: monthlyBarsPaid[k] || 0,
+        // legacy value for maxMonthlyScale calc
+        value: (monthlyBarsUnpaid[k] || 0) + (monthlyBarsPaid[k] || 0),
+        isPast, isCurrent 
+      };
     });
 
     const maxMonthlyScale = Math.max(...Object.values(monthlyIncome).concat(0), ...barData.map(d=>d.value));
@@ -1037,19 +1050,16 @@ export default function FinanceDashboard() {
                     contentStyle={{backgroundColor: isDark?'#09090b':'#fff', color: isDark?'#fff':'#000', borderRadius:'8px', border:`1px solid ${isDark?'#27272a':'#e2e8f0'}`}}
                     formatter={(val:any) => `₺${Number(val).toLocaleString('tr-TR',{maximumFractionDigits:0})}`}
                   />
-                  <Bar dataKey="value" radius={[8,8,8,8]}>
-                    {engineData.barData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.isPast 
-                          ? (isDark ? '#52525b' : '#e2e8f0') 
-                          : entry.isCurrent 
-                            ? (isDark ? '#a1a1aa' : '#94a3b8') 
-                            : (isDark ? '#fafafa' : '#18181b')
-                        }
-                      />
-                    ))}
-                  </Bar>
+                  {/* Unpaid expenses – dark/black bar (bottom of stack) */}
+                  <Bar dataKey="unpaid" stackId="a" radius={[0,0,8,8]}
+                    fill={isDark ? '#fafafa' : '#18181b'}
+                    name="Ödenmemiş"
+                  />
+                  {/* Paid expenses – light gray bar (top of stack) */}
+                  <Bar dataKey="paid" stackId="a" radius={[8,8,0,0]}
+                    fill={isDark ? '#3f3f46' : '#e2e8f0'}
+                    name="Ödenmiş"
+                  />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#64748b',fontSize:12}} dy={10}/>
                 </BarChart>
               </ResponsiveContainer>
