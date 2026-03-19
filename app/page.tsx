@@ -629,111 +629,24 @@ export default function FinanceDashboard() {
   return (
     <div className={bg} onClick={() => { setActiveTxnMenu(null); setIsCalendarOpen(false); setIsActionMenuOpen(false); setIsNotificationsOpen(false); }}>
 
-      {/* ── UNIFIED NAV & HEADER ── */}
-      <div className={`flex flex-wrap items-center justify-between px-4 md:px-10 py-3 gap-y-3 ${navBg} sticky top-0 z-40 border-b border-slate-100 dark:border-neutral-800`}>
-        {/* Left: Logo, Title, Search */}
-        <div className="flex items-center gap-3 md:gap-4 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0">
-            <span className="text-white dark:text-black text-sm font-bold">₺</span>
-          </div>
-          <h1 className={`text-lg md:text-xl font-bold tracking-tight ${title} hidden sm:block whitespace-nowrap`}>Finansal Kokpit</h1>
-          <div className="relative w-[140px] sm:w-[200px] md:max-w-xs transition-all">
-            <Search className={`absolute left-3 top-2.5 h-4 w-4 ${muted}`} />
-            <input placeholder="Ara..." className={`w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-neutral-900 rounded-md text-sm ${title} focus:outline-none border border-transparent focus:border-slate-300 dark:focus:border-neutral-700 transition-colors`} />
-          </div>
-        </div>
-
-        {/* Right: Actions, Notifications, Theme, Profile */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end flex-1 sm:flex-none">
+      {/* ── NAV ── */}
+      <div className={`${navBg} sticky top-0 z-40 border-b border-slate-100 dark:border-neutral-800`}>
+        <div className="max-w-[1500px] mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
           
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            {/* ── COMPACT CALENDAR TRIGGER ── */}
-            <div className="relative">
-              <button
-                onClick={(e) => { e.stopPropagation(); setIsCalendarOpen(prev => !prev); setIsActionMenuOpen(false); setIsNotificationsOpen(false); }}
-                className={`flex items-center gap-1.5 px-2 py-2 md:px-3 ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md border border-slate-200 dark:border-neutral-800`}
-              >
-                <CalendarDays className="w-4 h-4 shrink-0" />
-                <span className="hidden lg:inline">
-                  {dateRange.from && dateRange.to
-                    ? `${format(dateRange.from,'dd MMM',{locale:tr})} – ${format(dateRange.to,'dd MMM yy',{locale:tr})}`
-                    : 'Tarih Seçin'}
-                </span>
-              </button>
-
-              {/* ── COMPACT CALENDAR DROPDOWN ── */}
-              {isCalendarOpen && (
-                <div
-                  onClick={e => e.stopPropagation()}
-                  className={`absolute top-full right-0 mt-2 z-50 ${card} shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800`}
-                  style={{ width: 310 }}
-                >
-                  <style>{`
-                    .fc-cal .rdp { margin: 0; font-size: 13px; }
-                    .fc-cal .rdp-months { padding: 12px; }
-                    .fc-cal .rdp-month { width: 100%; }
-                    .fc-cal .rdp-table { width: 100%; table-layout: fixed; }
-                    .fc-cal .rdp-cell, .fc-cal .rdp-head_cell { width: 36px; height: 32px; text-align: center; }
-                    .fc-cal .rdp-day { width: 32px; height: 32px; font-size: 12px; border-radius: 6px; }
-                    .fc-cal .rdp-caption_label { font-size: 13px; font-weight: 600; }
-                    .fc-cal .rdp-caption { padding: 4px 0 8px; }
-                    .fc-cal .rdp-day_selected { background: ${isDark ? '#fff' : '#18181b'} !important; color: ${isDark ? '#000' : '#fff'} !important; border-radius: 6px; }
-                    .fc-cal .rdp-day_range_middle { background: ${isDark ? '#27272a' : '#f1f5f9'} !important; border-radius: 0; }
-                    .fc-cal .rdp-nav_button { width: 28px; height: 28px; border-radius: 6px; }
-                    .fc-cal .rdp-head_cell { font-size: 11px; color: ${isDark ? '#71717a' : '#94a3b8'}; font-weight: 500; }
-                  `}</style>
-                  <div className="fc-cal">
-                    <DayPicker mode="range" selected={dateRange as any} onSelect={r => setDateRange(r || {})} locale={tr} showOutsideDays={false} />
-                  </div>
-                  <div className={`px-3 pb-3 flex justify-end border-t border-slate-100 dark:border-neutral-800 pt-2`}>
-                    <button onClick={() => setIsCalendarOpen(false)} className={`px-4 py-1.5 rounded-md text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition-opacity`}>Uygula</button>
-                  </div>
-                </div>
-              )}
+          {/* Left: Logo and Search */}
+          <div className="flex items-center gap-3 md:gap-4 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0">
+              <span className="text-white dark:text-black text-sm font-bold">₺</span>
             </div>
-
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-2 md:px-3 bg-slate-900 text-white dark:bg-white dark:text-black rounded-md text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap shadow-sm"
-            >
-              <Plus className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Yeni Kayıt</span>
-            </button>
-
-            {/* Action Menu (Verileri Sıfırla, XML) */}
-            <div className="relative">
-              <button 
-                onClick={(e) => { e.stopPropagation(); setIsActionMenuOpen(prev => !prev); setIsCalendarOpen(false); setIsNotificationsOpen(false); }}
-                className={`flex items-center justify-center p-2 h-[36px] w-[36px] ${card} border border-slate-200 dark:border-neutral-800 text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md shadow-sm`}
-              >
-                <MoreVertical className="w-4 h-4 shrink-0" />
-              </button>
-
-              {isActionMenuOpen && (
-                <div 
-                  onClick={e => e.stopPropagation()}
-                  className={`absolute top-full right-0 mt-2 w-48 z-50 ${card} shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800 overflow-hidden flex flex-col p-1`}
-                >
-                  <label className={`flex items-center gap-2 px-3 py-2.5 text-sm ${title} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors cursor-pointer rounded-md`}>
-                    <Upload className="w-4 h-4 shrink-0" /> XML Yükle
-                    <input type="file" accept=".xml" className="hidden" onChange={(e) => { handleImportXML(e); setIsActionMenuOpen(false); }} />
-                  </label>
-                  <button onClick={() => { handleExportXML(); setIsActionMenuOpen(false); }} className={`flex items-center gap-2 px-3 py-2.5 text-sm ${title} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md`}>
-                    <Download className="w-4 h-4 shrink-0" /> XML İndir
-                  </button>
-                  <div className="h-px w-full bg-slate-100 dark:bg-neutral-800 my-1" />
-                  <button onClick={() => { handleResetAllData(); setIsActionMenuOpen(false); }} className={`flex items-center gap-2 px-3 py-2.5 text-sm text-rose-500 font-medium hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors rounded-md`}>
-                    <Trash2 className="w-4 h-4 shrink-0" /> Verileri Sıfırla
-                  </button>
-                </div>
-              )}
+            {/* Search Input */}
+            <div className="relative w-full max-w-[160px] sm:max-w-xs transition-all">
+              <Search className={`absolute left-3 top-2.5 h-4 w-4 ${muted}`} />
+              <input placeholder="Ara..." className={`w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-neutral-900 rounded-md text-sm ${title} focus:outline-none border border-transparent focus:border-slate-300 dark:focus:border-neutral-700 transition-colors`} />
             </div>
           </div>
 
-          <div className="w-px h-6 bg-slate-200 dark:bg-neutral-800 hidden sm:block mx-0.5"></div>
-
-          {/* System Icons (Notifications, Theme, Profile) */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          {/* Right: Notifications, Theme, Profile */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="relative">
               <button 
                 onClick={(e) => { e.stopPropagation(); setIsNotificationsOpen(prev => !prev); setIsActionMenuOpen(false); setIsCalendarOpen(false); }}
@@ -806,6 +719,95 @@ export default function FinanceDashboard() {
       </div>
 
       <div className="max-w-[1500px] mx-auto p-4 md:p-8 space-y-6">
+
+        {/* ── PAGE HEADER ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${title}`}>Finansal Kokpit</h1>
+          
+          {/* Action Buttons Aligned Right */}
+          <div className="flex items-center gap-2 justify-end">
+            {/* ── COMPACT CALENDAR TRIGGER ── */}
+            <div className="relative">
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsCalendarOpen(prev => !prev); setIsActionMenuOpen(false); setIsNotificationsOpen(false); }}
+                className={`flex items-center gap-1.5 px-3 py-2 ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md border border-slate-200 dark:border-neutral-800`}
+              >
+                <CalendarDays className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">
+                  {dateRange.from && dateRange.to
+                    ? `${format(dateRange.from,'dd MMM',{locale:tr})} – ${format(dateRange.to,'dd MMM yy',{locale:tr})}`
+                    : 'Tarih Seçin'}
+                </span>
+              </button>
+
+              {/* ── COMPACT CALENDAR DROPDOWN ── */}
+              {isCalendarOpen && (
+                <div
+                  onClick={e => e.stopPropagation()}
+                  className={`absolute top-full right-0 sm:right-auto sm:left-0 mt-2 z-50 ${card} shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800`}
+                  style={{ width: 310 }}
+                >
+                  <style>{`
+                    .fc-cal .rdp { margin: 0; font-size: 13px; }
+                    .fc-cal .rdp-months { padding: 12px; }
+                    .fc-cal .rdp-month { width: 100%; }
+                    .fc-cal .rdp-table { width: 100%; table-layout: fixed; }
+                    .fc-cal .rdp-cell, .fc-cal .rdp-head_cell { width: 36px; height: 32px; text-align: center; }
+                    .fc-cal .rdp-day { width: 32px; height: 32px; font-size: 12px; border-radius: 6px; }
+                    .fc-cal .rdp-caption_label { font-size: 13px; font-weight: 600; }
+                    .fc-cal .rdp-caption { padding: 4px 0 8px; }
+                    .fc-cal .rdp-day_selected { background: ${isDark ? '#fff' : '#18181b'} !important; color: ${isDark ? '#000' : '#fff'} !important; border-radius: 6px; }
+                    .fc-cal .rdp-day_range_middle { background: ${isDark ? '#27272a' : '#f1f5f9'} !important; border-radius: 0; }
+                    .fc-cal .rdp-nav_button { width: 28px; height: 28px; border-radius: 6px; }
+                    .fc-cal .rdp-head_cell { font-size: 11px; color: ${isDark ? '#71717a' : '#94a3b8'}; font-weight: 500; }
+                  `}</style>
+                  <div className="fc-cal">
+                    <DayPicker mode="range" selected={dateRange as any} onSelect={r => setDateRange(r || {})} locale={tr} showOutsideDays={false} />
+                  </div>
+                  <div className={`px-3 pb-3 flex justify-end border-t border-slate-100 dark:border-neutral-800 pt-2`}>
+                    <button onClick={() => setIsCalendarOpen(false)} className={`px-4 py-1.5 rounded-md text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition-opacity`}>Uygula</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#18181b] text-white dark:bg-white dark:text-black rounded-md text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap shadow-sm"
+            >
+              <Plus className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Yeni Kayıt</span>
+            </button>
+
+            {/* Action Menu (Verileri Sıfırla, XML) */}
+            <div className="relative">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setIsActionMenuOpen(prev => !prev); setIsCalendarOpen(false); setIsNotificationsOpen(false); }}
+                className={`flex items-center justify-center p-2 h-[36px] w-[36px] ${card} border border-slate-200 dark:border-neutral-800 text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md shadow-sm`}
+              >
+                <MoreVertical className="w-4 h-4 shrink-0" />
+              </button>
+
+              {isActionMenuOpen && (
+                <div 
+                  onClick={e => e.stopPropagation()}
+                  className={`absolute top-full right-0 mt-2 w-48 z-50 ${card} shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800 overflow-hidden flex flex-col p-1`}
+                >
+                  <label className={`flex items-center gap-2 px-3 py-2.5 text-sm ${title} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors cursor-pointer rounded-md`}>
+                    <Upload className="w-4 h-4 shrink-0" /> XML Yükle
+                    <input type="file" accept=".xml" className="hidden" onChange={(e) => { handleImportXML(e); setIsActionMenuOpen(false); }} />
+                  </label>
+                  <button onClick={() => { handleExportXML(); setIsActionMenuOpen(false); }} className={`flex items-center gap-2 px-3 py-2.5 text-sm ${title} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md`}>
+                    <Download className="w-4 h-4 shrink-0" /> XML İndir
+                  </button>
+                  <div className="h-px w-full bg-slate-100 dark:bg-neutral-800 my-1" />
+                  <button onClick={() => { handleResetAllData(); setIsActionMenuOpen(false); }} className={`flex items-center gap-2 px-3 py-2.5 text-sm text-rose-500 font-medium hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors rounded-md`}>
+                    <Trash2 className="w-4 h-4 shrink-0" /> Verileri Sıfırla
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* ── ROW 1: KPI CARDS ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
