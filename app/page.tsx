@@ -999,8 +999,8 @@ export default function FinanceDashboard() {
             <p className={`text-sm ${muted} mb-4`}>Seçilen zaman periyodu matrisi</p>
             <div className="flex-1 min-h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={engineData.barData} margin={{top:0,right:0,left:0,bottom:0}} barSize={48}>
-                  <YAxis hide domain={[0, engineData.maxMonthlyScale > 0 ? engineData.maxMonthlyScale : 'auto']} />
+                <BarChart data={engineData.barData} margin={{top:0,right:0,left:0,bottom:0}} barCategoryGap="25%">
+                  <YAxis hide domain={[0, 'auto']} />
                   <RechartsTooltip
                     cursor={{fill: isDark ? '#18181b' : '#f1f5f9'}}
                     contentStyle={{backgroundColor: isDark?'#09090b':'#fff', color: isDark?'#fff':'#000', borderRadius:'8px', border:`1px solid ${isDark?'#27272a':'#e2e8f0'}`}}
@@ -1093,7 +1093,7 @@ export default function FinanceDashboard() {
               </div>
             </div>
             <div className="overflow-y-auto max-h-[420px]">
-              <table className="w-full text-sm text-left">
+              <table className="w-full text-sm text-left table-fixed">
                 <thead className={`text-xs font-semibold uppercase tracking-wider border-b border-slate-100 dark:border-neutral-800 sticky top-0 bg-white dark:bg-[#09090b] z-10`}>
                   <tr className="group">
                     <th className="px-4 py-3 w-10">
@@ -1104,10 +1104,10 @@ export default function FinanceDashboard() {
                         onChange={() => handleToggleSelectAll(engineData.allTxns.map(t=>t.id))}
                       />
                     </th>
-                    <th className={`px-2 py-3 ${muted}`}>İşlem Adı</th>
-                    <th className={`px-5 py-3 ${muted}`}>Tarih</th>
-                    <th className={`px-5 py-3 ${muted}`}>Tür</th>
-                    <th className={`px-5 py-3 text-right ${muted}`}>Tutar</th>
+                    <th className={`px-2 py-3 ${muted} w-4/12`}>İşlem Adı</th>
+                    <th className={`px-5 py-3 ${muted} w-3/12`}>Tarih</th>
+                    <th className={`px-5 py-3 ${muted} w-2/12`}>Tür</th>
+                    <th className={`px-5 py-3 text-right ${muted} w-3/12`}>Tutar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-neutral-800/60">
