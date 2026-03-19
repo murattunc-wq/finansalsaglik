@@ -69,6 +69,7 @@ export default function FinanceDashboard() {
   const [activeMatrixMenu, setActiveMatrixMenu] = useState<string|null>(null);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>(() => {
     try {
@@ -212,7 +213,7 @@ export default function FinanceDashboard() {
     if (!editingCell) return;
     const val = Number(editValue.replace(/[^0-9.]/g, ''));
     if (!isNaN(val) && val >= 0) {
-      const mDate = parse(MATRIX_MONTHS[editingCell.monthIdx], 'MMM yy', new Date(), { locale: tr });
+      const mDate = parse(engineData.matrixColumns[editingCell.monthIdx], 'MMM yy', new Date(), { locale: tr });
       const projId = `proj-${editingCell.itemId}-${format(mDate, 'yyyy-MM')}`;
       setOverrides(prev => ({ ...prev, [projId]: val }));
     }
@@ -526,6 +527,14 @@ export default function FinanceDashboard() {
     let currentD = startOfMonth(startD);
     let loopCount = 0;
 
+    // Dynamic Matrix Columns
+    const matrixColumns: string[] = [];
+    let cD = startOfMonth(startD);
+    while (cD <= startOfMonth(endD) && matrixColumns.length < 60) {
+      matrixColumns.push(format(cD, 'MMM yy', { locale: tr }).toUpperCase());
+      cD = addMonths(cD, 1);
+    }
+
     type MatrixCellData = { [mIdx: number]: number };
     const matrixRowsMap = new Map<string, { id: string, name: string, type: 'income'|'expense', isRecurring: boolean, baseItem?: any, cells: MatrixCellData }>();
 
@@ -555,7 +564,7 @@ export default function FinanceDashboard() {
         }
         
         const mStr = format(currentD, 'MMM yy', { locale: tr }).toUpperCase();
-        const mIdx = MATRIX_MONTHS.findIndex(m => m.toUpperCase() === mStr);
+        const mIdx = matrixColumns.indexOf(mStr);
         if (mIdx !== -1) {
           matrixRowsMap.get(`rec-${rec.id}`)!.cells[mIdx] = mappedAmt;
         }
@@ -600,7 +609,7 @@ export default function FinanceDashboard() {
         // Find month index for matrix
         let mIdx = -1;
         let dCheck = startOfMonth(startD);
-        for(let i=0; i<MATRIX_MONTHS.length; i++) {
+        for(let i=0; i<matrixColumns.length; i++) {
           if (format(dCheck, 'MMM yy', { locale: tr }).toUpperCase() === format(td, 'MMM yy', { locale: tr }).toUpperCase()) { mIdx = i; break; }
           dCheck = addMonths(dCheck, 1);
         }
@@ -667,7 +676,7 @@ export default function FinanceDashboard() {
     const maxMonthlyScale = Math.max(...Object.values(monthlyIncome).concat(0), ...barData.map(d=>d.value));
 
     return {
-      totalIncome, totalExpense, barData, donutData, allTxns, matrixRows, activeList: activeListWithStatus, unpaidCount,
+      totalIncome, totalExpense, barData, donutData, allTxns, matrixRows, matrixColumns, activeList: activeListWithStatus, unpaidCount,
       totalPendingDebts: unpaidTotal, incomeSources, maxMonthlyScale
     };
   }, [recurring, installments, transactions, overrides, dateRange, hiddenProjections, customOrders, paidStatus, theme, mounted]);
@@ -691,7 +700,7 @@ export default function FinanceDashboard() {
      JSX
      ============================================================ */
   return (
-    <div className={bg} onClick={() => { setActiveTxnMenu(null); setIsCalendarOpen(false); setIsActionMenuOpen(false); setIsNotificationsOpen(false); }}>
+    <div className={bg} onClick={() => { setActiveTxnMenu(null); setIsCalendarOpen(false); setIsActionMenuOpen(false); setIsNotificationsOpen(false); setIsProfileOpen(false); }}>
 
       {/* ── NAV ── */}
       <div className={`${navBg} sticky top-0 z-40 border-b border-slate-100 dark:border-neutral-800`}>
@@ -751,8 +760,11 @@ export default function FinanceDashboard() {
             </button>
             
             {/* Profile dropdown */}
-            <div className="relative group">
-              <button className={`flex items-center gap-2 rounded-full sm:rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 p-1 transition-colors outline-none focus:outline-none`}>
+            <div className="relative">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setIsProfileOpen(prev => !prev); setIsNotificationsOpen(false); setIsActionMenuOpen(false); setIsCalendarOpen(false); }}
+                className={`flex items-center gap-2 rounded-full sm:rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 p-1 transition-colors outline-none focus:outline-none`}
+              >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 font-semibold text-sm overflow-hidden shrink-0 shadow-sm`}
                   style={{ background: sessionUser?.image ? 'transparent' : '#e2e8f0' }}>
                   {sessionUser?.image
@@ -761,22 +773,26 @@ export default function FinanceDashboard() {
                   }
                 </div>
               </button>
-              {/* Dropdown */}
-              <div className={`absolute right-0 top-full mt-2 w-56 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all scale-95 group-hover:scale-100 origin-top-right z-50`}>
-                <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800">
-                  <p className={`text-sm font-semibold ${title} truncate`}>{sessionUser?.name || 'Kullanıcı'}</p>
-                  <p className={`text-xs ${muted} truncate`}>{sessionUser?.email || ''}</p>
-                </div>
-                <button
-                  onClick={() => signOut({ callbackUrl: '/login' })}
-                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium"
+              {isProfileOpen && (
+                <div 
+                  onClick={e => e.stopPropagation()}
+                  className={`absolute right-0 top-full mt-2 w-56 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 overflow-hidden transition-all z-50`}
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                  </svg>
-                  Çıkış Yap
-                </button>
-              </div>
+                  <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800">
+                    <p className={`text-sm font-semibold ${title} truncate`}>{sessionUser?.name || 'Kullanıcı'}</p>
+                    <p className={`text-xs ${muted} truncate`}>{sessionUser?.email || ''}</p>
+                  </div>
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/login' })}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Çıkış Yap
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1244,7 +1260,7 @@ export default function FinanceDashboard() {
               <thead className={`text-[11px] uppercase tracking-wider ${muted} border-b border-slate-100 dark:border-neutral-800`}>
                 <tr>
                   <th className="px-5 py-3 font-semibold w-[220px]">Kural / İşlem</th>
-                  {MATRIX_MONTHS.map(m => <th key={m} className="px-4 py-3 font-semibold text-right w-[110px]">{m}</th>)}
+                  {engineData.matrixColumns.map(m => <th key={m} className="px-4 py-3 font-semibold text-right w-[110px]">{m}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-neutral-800/60">
@@ -1306,7 +1322,7 @@ export default function FinanceDashboard() {
                     </td>
 
                     {/* Matrix Data Cells */}
-                    {MATRIX_MONTHS.map((month, idx) => {
+                    {engineData.matrixColumns.map((month, idx) => {
                       const val = item.cells[idx];
                       const isEditing = item.isRecurring && editingCell?.monthIdx===idx && editingCell?.itemId===item.baseItem.id;
                       return (
