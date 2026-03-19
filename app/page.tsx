@@ -134,7 +134,7 @@ export default function FinanceDashboard() {
   useEffect(() => {
     if (!sessionUser?.email) return;
     let isStale = false;
-    fetch('/api/user/data').then(res => res.json()).then(res => {
+    fetch(`/api/user/data?t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).then(res => {
       if (isStale) return;
       if (res.data && Object.keys(res.data).length > 0) {
         const d = res.data;
@@ -667,8 +667,7 @@ export default function FinanceDashboard() {
       }
     });
     
-    // Add real transactions to allTxns and sort
-    allTxns.push(...transactionsInRange);
+    // Sort transactions
     allTxns.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const barData = Object.keys(monthlyBars).map(k => ({ name: k, value: monthlyBars[k] }));
 
