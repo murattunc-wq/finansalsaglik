@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -74,6 +75,8 @@ function loadLS<T>(key: string, fallback: T): T {
    ============================================================ */
 export default function FinanceDashboard() {
   const { theme, setTheme } = useTheme();
+  const { data: session } = useSession();
+  const sessionUser = session?.user;
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -636,8 +639,34 @@ export default function FinanceDashboard() {
           <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`${muted} hover:text-slate-900 dark:hover:text-white transition-colors`}>
             {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
-          <div className={`w-8 h-8 bg-slate-200 dark:bg-neutral-800 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700`}>
-            <User className={`w-4 h-4 ${muted}`} />
+          {/* Profile dropdown */}
+          <div className="relative group">
+            <button className={`flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 font-semibold text-sm overflow-hidden`}
+                style={{ background: sessionUser?.image ? 'transparent' : '#e2e8f0' }}>
+                {sessionUser?.image
+                  ? <img src={sessionUser.image} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                  : <span className="text-slate-600 dark:text-neutral-300">{(sessionUser?.name || sessionUser?.email || 'U').charAt(0).toUpperCase()}</span>
+                }
+              </div>
+              {sessionUser?.name && <span className={`text-sm font-medium ${title} hidden lg:block max-w-[120px] truncate`}>{sessionUser.name}</span>}
+            </button>
+            {/* Dropdown */}
+            <div className={`absolute right-0 top-full mt-2 w-56 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all scale-95 group-hover:scale-100 origin-top-right z-50`}>
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800">
+                <p className={`text-sm font-semibold ${title} truncate`}>{sessionUser?.name || 'Kullanıcı'}</p>
+                <p className={`text-xs ${muted} truncate`}>{sessionUser?.email || ''}</p>
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                Çıkış Yap
+              </button>
+            </div>
           </div>
         </div>
       </div>
