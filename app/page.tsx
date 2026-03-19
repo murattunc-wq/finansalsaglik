@@ -669,7 +669,6 @@ export default function FinanceDashboard() {
     
     // Sort transactions
     allTxns.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    const barData = Object.keys(monthlyBars).map(k => ({ name: k, value: monthlyBars[k] }));
 
     const palette = mounted && theme === 'dark' ? DARK_DONUT_COLORS : DONUT_COLORS;
     const donutData = Object.keys(expenseCategories)
@@ -686,11 +685,13 @@ export default function FinanceDashboard() {
     });
     
     // Compute Active Liabilities for Sidebar
+    const today = new Date();
+    const currentDay = today.getDate();
+    
     const activeList = [
       ...installments.map(i => ({ id: `inst-${i.id}`, name: i.name, amount: i.monthly, remaining: i.remaining, type: 'installment' as const, dueDay: i.dueDay || 1 })),
       ...recurring.filter(r=>r.type==='expense').map(r => ({ id: `rec-${r.id}`, name: r.name, amount: r.amount, type: 'recurring' as const, dueDay: r.dueDay || 1 }))
     ];
-    const currentDay = (new Date()).getDate();
     activeList.sort((a, b) => {
       const aDiff = a.dueDay >= currentDay ? a.dueDay - currentDay : a.dueDay + 31 - currentDay;
       const bDiff = b.dueDay >= currentDay ? b.dueDay - currentDay : b.dueDay + 31 - currentDay;
@@ -698,14 +699,25 @@ export default function FinanceDashboard() {
     });
 
     const activeListWithStatus = activeList.map(liab => {
-      const monthKey = format(new Date(), 'yyyy-MM');
-      const isPaid = paidStatus[`${monthKey}-${liab.id}`] || false;
+      const monthKey = format(today, 'yyyy-MM');
+      const manuallyPaid = paidStatus[`${monthKey}-${liab.id}`] || false;
+      // Auto-detect: if dueDay already passed this month, treat as paid
+      const autoPaid = liab.dueDay < currentDay;
+      const isPaid = manuallyPaid || autoPaid;
       return { ...liab, isPaid };
     });
 
     const unpaidCount = activeListWithStatus.filter(l => !l.isPaid).length;
     const unpaidTotal = activeListWithStatus.filter(l => !l.isPaid).reduce((s,l) => s + l.amount, 0);
     
+    // Add isPast to barData so chart can differentiate past months 
+    const barData = Object.keys(monthlyBars).map(k => {
+      const monthDate = parse(k, 'MMM', new Date(), { locale: tr });
+      const isPast = monthDate.getMonth() < today.getMonth() || monthDate.getFullYear() < today.getFullYear();
+      const isCurrent = monthDate.getMonth() === today.getMonth();
+      return { name: k, value: monthlyBars[k], isPast, isCurrent };
+    });
+
     const maxMonthlyScale = Math.max(...Object.values(monthlyIncome).concat(0), ...barData.map(d=>d.value));
 
     return {
@@ -1016,7 +1028,19 @@ export default function FinanceDashboard() {
                     contentStyle={{backgroundColor: isDark?'#09090b':'#fff', color: isDark?'#fff':'#000', borderRadius:'8px', border:`1px solid ${isDark?'#27272a':'#e2e8f0'}`}}
                     formatter={(val:any) => `₺${Number(val).toLocaleString('tr-TR',{maximumFractionDigits:0})}`}
                   />
-                  <Bar dataKey="value" fill={isDark?'#fafafa':'#18181b'} radius={[8,8,8,8]}/>
+                  <Bar dataKey="value" radius={[8,8,8,8]}>
+                    {engineData.barData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.isPast 
+                          ? (isDark ? '#3f3f46' : '#cbd5e1') 
+                          : entry.isCurrent 
+                            ? (isDark ? '#a1a1aa' : '#64748b') 
+                            : (isDark ? '#fafafa' : '#18181b')
+                        }
+                      />
+                    ))}
+                  </Bar>
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#64748b',fontSize:12}} dy={10}/>
                 </BarChart>
               </ResponsiveContainer>
