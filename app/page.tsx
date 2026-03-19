@@ -629,148 +629,73 @@ export default function FinanceDashboard() {
   return (
     <div className={bg} onClick={() => { setActiveTxnMenu(null); setIsCalendarOpen(false); setIsActionMenuOpen(false); setIsNotificationsOpen(false); }}>
 
-      {/* ── NAV ── */}
-      <div className={`flex items-center justify-between px-4 md:px-10 py-3 ${navBg} sticky top-0 z-40 border-b border-slate-100 dark:border-neutral-800`}>
-        {/* Left: Logo and Search grouped on the left */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0">
-              <span className="text-white dark:text-black text-sm font-bold">₺</span>
-            </div>
-            <span className={`text-base font-bold ${title} hidden sm:block`}>Finansal Kokpit</span>
+      {/* ── UNIFIED NAV & HEADER ── */}
+      <div className={`flex flex-wrap items-center justify-between px-4 md:px-10 py-3 gap-y-3 ${navBg} sticky top-0 z-40 border-b border-slate-100 dark:border-neutral-800`}>
+        {/* Left: Logo, Title, Search */}
+        <div className="flex items-center gap-3 md:gap-4 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0">
+            <span className="text-white dark:text-black text-sm font-bold">₺</span>
           </div>
-          <div className="relative w-full max-w-[200px] md:max-w-xs transition-all">
+          <h1 className={`text-lg md:text-xl font-bold tracking-tight ${title} hidden sm:block whitespace-nowrap`}>Finansal Kokpit</h1>
+          <div className="relative w-[140px] sm:w-[200px] md:max-w-xs transition-all">
             <Search className={`absolute left-3 top-2.5 h-4 w-4 ${muted}`} />
-            <input placeholder="Ara..." className={`w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-neutral-900 rounded-md text-sm ${title} focus:outline-none border border-transparent focus:border-slate-300 dark:focus:border-neutral-700 transition-colors`} />
+            <input placeholder="Ara..." className={`w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-neutral-900 rounded-md text-sm ${title} focus:outline-none border border-transparent focus:border-slate-300 dark:focus:border-neutral-700 transition-colors`} />
           </div>
         </div>
 
-        {/* Right: notifications, theme, profile */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0 justify-end">
+        {/* Right: Actions, Notifications, Theme, Profile */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end flex-1 sm:flex-none">
           
-          <div className="relative">
-            <button 
-              onClick={(e) => { e.stopPropagation(); setIsNotificationsOpen(prev => !prev); setIsActionMenuOpen(false); setIsCalendarOpen(false); }}
-              className={`relative p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white transition-colors`}
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-black" />
-            </button>
-            
-            {/* Notifications Dropdown */}
-            {isNotificationsOpen && (
-              <div 
-                onClick={e => e.stopPropagation()}
-                className={`absolute right-0 top-full mt-2 w-72 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 overflow-hidden z-50`}
-              >
-                <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800 flex justify-between items-center">
-                  <h3 className={`text-sm font-semibold ${title}`}>Bildirimler</h3>
-                  <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 Yeni</span>
-                </div>
-                <div className="p-4 flex flex-col gap-3">
-                  <div className="flex gap-3 items-start">
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
-                      <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <div>
-                      <p className={`text-sm font-medium ${title}`}>Maaş yattı</p>
-                      <p className={`text-xs ${muted} mt-0.5`}>Hesabınıza 130.000 TL transfer edildi.</p>
-                      <span className={`text-[10px] ${muted} mt-1 block`}>Az önce</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white transition-colors`}>
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-          
-          {/* Profile dropdown */}
-          <div className="relative group">
-            <button className={`flex items-center gap-2 rounded-full sm:rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 p-1 transition-colors`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 font-semibold text-sm overflow-hidden shrink-0`}
-                style={{ background: sessionUser?.image ? 'transparent' : '#e2e8f0' }}>
-                {sessionUser?.image
-                  ? <img src={sessionUser.image} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
-                  : <span className="text-slate-600 dark:text-neutral-300">{(sessionUser?.name || sessionUser?.email || 'U').charAt(0).toUpperCase()}</span>
-                }
-              </div>
-              {sessionUser?.name && <span className={`text-sm font-medium ${title} hidden lg:block max-w-[120px] truncate`}>{sessionUser.name}</span>}
-            </button>
-            {/* Dropdown */}
-            <div className={`absolute right-0 top-full mt-2 w-56 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all scale-95 group-hover:scale-100 origin-top-right z-50`}>
-              <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800">
-                <p className={`text-sm font-semibold ${title} truncate`}>{sessionUser?.name || 'Kullanıcı'}</p>
-                <p className={`text-xs ${muted} truncate`}>{sessionUser?.email || ''}</p>
-              </div>
-              <button
-                onClick={() => signOut({ callbackUrl: '/login' })}
-                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-                Çıkış Yap
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-[1500px] mx-auto p-4 md:p-8 space-y-6">
-
-        {/* ── PAGE HEADER ── */}
-        <div className="flex flex-col gap-3">
-          <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${title}`}>Finansal Kokpit</h1>
-          <div className="flex flex-wrap gap-2 items-center">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
             {/* ── COMPACT CALENDAR TRIGGER ── */}
             <div className="relative">
               <button
                 onClick={(e) => { e.stopPropagation(); setIsCalendarOpen(prev => !prev); setIsActionMenuOpen(false); setIsNotificationsOpen(false); }}
-                className={`flex items-center gap-2 px-3 py-2 ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors`}
+                className={`flex items-center gap-1.5 px-2 py-2 md:px-3 ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md border border-slate-200 dark:border-neutral-800`}
               >
-                <CalendarDays className="w-4 h-4" />
-                {dateRange.from && dateRange.to
-                  ? `${format(dateRange.from,'dd MMM',{locale:tr})} – ${format(dateRange.to,'dd MMM yy',{locale:tr})}`
-                  : 'Tarih Seçin'}
+                <CalendarDays className="w-4 h-4 shrink-0" />
+                <span className="hidden lg:inline">
+                  {dateRange.from && dateRange.to
+                    ? `${format(dateRange.from,'dd MMM',{locale:tr})} – ${format(dateRange.to,'dd MMM yy',{locale:tr})}`
+                    : 'Tarih Seçin'}
+                </span>
               </button>
 
               {/* ── COMPACT CALENDAR DROPDOWN ── */}
               {isCalendarOpen && (
                 <div
                   onClick={e => e.stopPropagation()}
-                  className={`absolute top-full left-0 mt-2 z-50 ${card} shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800`}
+                  className={`absolute top-full right-0 mt-2 z-50 ${card} shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800`}
                   style={{ width: 310 }}
-              >
-                <style>{`
-                  .fc-cal .rdp { margin: 0; font-size: 13px; }
-                  .fc-cal .rdp-months { padding: 12px; }
-                  .fc-cal .rdp-month { width: 100%; }
-                  .fc-cal .rdp-table { width: 100%; table-layout: fixed; }
-                  .fc-cal .rdp-cell, .fc-cal .rdp-head_cell { width: 36px; height: 32px; text-align: center; }
-                  .fc-cal .rdp-day { width: 32px; height: 32px; font-size: 12px; border-radius: 6px; }
-                  .fc-cal .rdp-caption_label { font-size: 13px; font-weight: 600; }
-                  .fc-cal .rdp-caption { padding: 4px 0 8px; }
-                  .fc-cal .rdp-day_selected { background: ${isDark ? '#fff' : '#18181b'} !important; color: ${isDark ? '#000' : '#fff'} !important; border-radius: 6px; }
-                  .fc-cal .rdp-day_range_middle { background: ${isDark ? '#27272a' : '#f1f5f9'} !important; border-radius: 0; }
-                  .fc-cal .rdp-nav_button { width: 28px; height: 28px; border-radius: 6px; }
-                  .fc-cal .rdp-head_cell { font-size: 11px; color: ${isDark ? '#71717a' : '#94a3b8'}; font-weight: 500; }
-                `}</style>
-                <div className="fc-cal">
-                  <DayPicker mode="range" selected={dateRange as any} onSelect={r => setDateRange(r || {})} locale={tr} showOutsideDays={false} />
+                >
+                  <style>{`
+                    .fc-cal .rdp { margin: 0; font-size: 13px; }
+                    .fc-cal .rdp-months { padding: 12px; }
+                    .fc-cal .rdp-month { width: 100%; }
+                    .fc-cal .rdp-table { width: 100%; table-layout: fixed; }
+                    .fc-cal .rdp-cell, .fc-cal .rdp-head_cell { width: 36px; height: 32px; text-align: center; }
+                    .fc-cal .rdp-day { width: 32px; height: 32px; font-size: 12px; border-radius: 6px; }
+                    .fc-cal .rdp-caption_label { font-size: 13px; font-weight: 600; }
+                    .fc-cal .rdp-caption { padding: 4px 0 8px; }
+                    .fc-cal .rdp-day_selected { background: ${isDark ? '#fff' : '#18181b'} !important; color: ${isDark ? '#000' : '#fff'} !important; border-radius: 6px; }
+                    .fc-cal .rdp-day_range_middle { background: ${isDark ? '#27272a' : '#f1f5f9'} !important; border-radius: 0; }
+                    .fc-cal .rdp-nav_button { width: 28px; height: 28px; border-radius: 6px; }
+                    .fc-cal .rdp-head_cell { font-size: 11px; color: ${isDark ? '#71717a' : '#94a3b8'}; font-weight: 500; }
+                  `}</style>
+                  <div className="fc-cal">
+                    <DayPicker mode="range" selected={dateRange as any} onSelect={r => setDateRange(r || {})} locale={tr} showOutsideDays={false} />
+                  </div>
+                  <div className={`px-3 pb-3 flex justify-end border-t border-slate-100 dark:border-neutral-800 pt-2`}>
+                    <button onClick={() => setIsCalendarOpen(false)} className={`px-4 py-1.5 rounded-md text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition-opacity`}>Uygula</button>
+                  </div>
                 </div>
-                <div className={`px-3 pb-3 flex justify-end border-t border-slate-100 dark:border-neutral-800 pt-2`}>
-                  <button onClick={() => setIsCalendarOpen(false)} className={`px-4 py-1.5 rounded-md text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition-opacity`}>Uygula</button>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#18181b] text-white dark:bg-white dark:text-black rounded-md text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
+              className="flex items-center gap-1.5 px-2.5 py-2 md:px-3 bg-slate-900 text-white dark:bg-white dark:text-black rounded-md text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap shadow-sm"
             >
               <Plus className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Yeni Kayıt</span>
             </button>
@@ -779,7 +704,7 @@ export default function FinanceDashboard() {
             <div className="relative">
               <button 
                 onClick={(e) => { e.stopPropagation(); setIsActionMenuOpen(prev => !prev); setIsCalendarOpen(false); setIsNotificationsOpen(false); }}
-                className={`flex items-center justify-center p-2 h-[36px] w-[36px] ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md`}
+                className={`flex items-center justify-center p-2 h-[36px] w-[36px] ${card} border border-slate-200 dark:border-neutral-800 text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md shadow-sm`}
               >
                 <MoreVertical className="w-4 h-4 shrink-0" />
               </button>
@@ -803,9 +728,84 @@ export default function FinanceDashboard() {
                 </div>
               )}
             </div>
+          </div>
 
+          <div className="w-px h-6 bg-slate-200 dark:bg-neutral-800 hidden sm:block mx-0.5"></div>
+
+          {/* System Icons (Notifications, Theme, Profile) */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="relative">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setIsNotificationsOpen(prev => !prev); setIsActionMenuOpen(false); setIsCalendarOpen(false); }}
+                className={`relative p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white transition-colors`}
+              >
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-black" />
+              </button>
+              
+              {/* Notifications Dropdown */}
+              {isNotificationsOpen && (
+                <div 
+                  onClick={e => e.stopPropagation()}
+                  className={`absolute right-0 top-full mt-2 w-72 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 overflow-hidden z-50`}
+                >
+                  <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800 flex justify-between items-center">
+                    <h3 className={`text-sm font-semibold ${title}`}>Bildirimler</h3>
+                    <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 Yeni</span>
+                  </div>
+                  <div className="p-4 flex flex-col gap-3">
+                    <div className="flex gap-3 items-start">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+                        <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div>
+                        <p className={`text-sm font-medium ${title}`}>Maaş yattı</p>
+                        <p className={`text-xs ${muted} mt-0.5`}>Hesabınıza 130.000 TL transfer edildi.</p>
+                        <span className={`text-[10px] ${muted} mt-1 block`}>Az önce</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white transition-colors`}>
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+            
+            {/* Profile dropdown */}
+            <div className="relative group">
+              <button className={`flex items-center gap-2 rounded-full sm:rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 p-1 transition-colors outline-none focus:outline-none`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 font-semibold text-sm overflow-hidden shrink-0 shadow-sm`}
+                  style={{ background: sessionUser?.image ? 'transparent' : '#e2e8f0' }}>
+                  {sessionUser?.image
+                    ? <img src={sessionUser.image} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                    : <span className="text-slate-600 dark:text-neutral-300">{(sessionUser?.name || sessionUser?.email || 'U').charAt(0).toUpperCase()}</span>
+                  }
+                </div>
+              </button>
+              {/* Dropdown */}
+              <div className={`absolute right-0 top-full mt-2 w-56 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all scale-95 group-hover:scale-100 origin-top-right z-50`}>
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800">
+                  <p className={`text-sm font-semibold ${title} truncate`}>{sessionUser?.name || 'Kullanıcı'}</p>
+                  <p className={`text-xs ${muted} truncate`}>{sessionUser?.email || ''}</p>
+                </div>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                  </svg>
+                  Çıkış Yap
+                </button>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div className="max-w-[1500px] mx-auto p-4 md:p-8 space-y-6">
 
         {/* ── ROW 1: KPI CARDS ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
