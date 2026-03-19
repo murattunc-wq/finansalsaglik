@@ -63,11 +63,13 @@ export default function FinanceDashboard() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  /* ---- UI state ---- */
   const [isModalOpen,    setIsModalOpen]    = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [activeTxnMenu,  setActiveTxnMenu]  = useState<string|null>(null);
   const [activeMatrixMenu, setActiveMatrixMenu] = useState<string|null>(null);
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>(() => {
     try {
       const stored = localStorage.getItem('fcv2_dateRange');
@@ -149,8 +151,6 @@ export default function FinanceDashboard() {
         amount: payload.amount, date: payload.date || new Date().toISOString(),
         avatarPrefix: payload.description.charAt(0).toUpperCase(),
       }, ...prev]);
-      if (payload.type === 'income')  setBaseCapital(b => b + payload.amount);
-      if (payload.type === 'expense') setBaseCapital(b => b - payload.amount);
     }
     setIsModalOpen(false);
   };
@@ -627,37 +627,70 @@ export default function FinanceDashboard() {
      JSX
      ============================================================ */
   return (
-    <div className={bg} onClick={() => { setActiveTxnMenu(null); setIsCalendarOpen(false); }}>
+    <div className={bg} onClick={() => { setActiveTxnMenu(null); setIsCalendarOpen(false); setIsActionMenuOpen(false); setIsNotificationsOpen(false); }}>
 
       {/* ── NAV ── */}
       <div className={`flex items-center justify-between px-4 md:px-10 py-3 ${navBg} sticky top-0 z-40 border-b border-slate-100 dark:border-neutral-800`}>
-        {/* Left: Logo on mobile, Search on desktop */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 md:hidden">
-            <div className="w-7 h-7 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center">
-              <span className="text-white dark:text-black text-xs font-bold">₺</span>
+        {/* Left: Logo and Search grouped on the left */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0">
+              <span className="text-white dark:text-black text-sm font-bold">₺</span>
             </div>
-            <span className={`text-sm font-bold ${title}`}>Finansal Kokpit</span>
+            <span className={`text-base font-bold ${title} hidden sm:block`}>Finansal Kokpit</span>
           </div>
-          <div className="relative w-full max-w-xs hidden md:block">
+          <div className="relative w-full max-w-[200px] md:max-w-xs transition-all">
             <Search className={`absolute left-3 top-2.5 h-4 w-4 ${muted}`} />
             <input placeholder="Ara..." className={`w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-neutral-900 rounded-md text-sm ${title} focus:outline-none border border-transparent focus:border-slate-300 dark:focus:border-neutral-700 transition-colors`} />
           </div>
         </div>
-        {/* Right: icons */}
-        <div className="flex items-center gap-3">
-          <button className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold hidden sm:block">Yükselt</button>
-          <button className={`relative ${muted} hover:text-slate-900 dark:hover:text-white transition-colors`}>
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-black" />
-          </button>
-          <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`${muted} hover:text-slate-900 dark:hover:text-white transition-colors`}>
+
+        {/* Right: notifications, theme, profile */}
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0 justify-end">
+          
+          <div className="relative">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsNotificationsOpen(prev => !prev); setIsActionMenuOpen(false); setIsCalendarOpen(false); }}
+              className={`relative p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white transition-colors`}
+            >
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-black" />
+            </button>
+            
+            {/* Notifications Dropdown */}
+            {isNotificationsOpen && (
+              <div 
+                onClick={e => e.stopPropagation()}
+                className={`absolute right-0 top-full mt-2 w-72 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 overflow-hidden z-50`}
+              >
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800 flex justify-between items-center">
+                  <h3 className={`text-sm font-semibold ${title}`}>Bildirimler</h3>
+                  <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 Yeni</span>
+                </div>
+                <div className="p-4 flex flex-col gap-3">
+                  <div className="flex gap-3 items-start">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+                      <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className={`text-sm font-medium ${title}`}>Maaş yattı</p>
+                      <p className={`text-xs ${muted} mt-0.5`}>Hesabınıza 130.000 TL transfer edildi.</p>
+                      <span className={`text-[10px] ${muted} mt-1 block`}>Az önce</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white transition-colors`}>
             {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
+          
           {/* Profile dropdown */}
           <div className="relative group">
-            <button className={`flex items-center gap-2 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 p-1 transition-colors`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 font-semibold text-sm overflow-hidden`}
+            <button className={`flex items-center gap-2 rounded-full sm:rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 p-1 transition-colors`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 font-semibold text-sm overflow-hidden shrink-0`}
                 style={{ background: sessionUser?.image ? 'transparent' : '#e2e8f0' }}>
                 {sessionUser?.image
                   ? <img src={sessionUser.image} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
@@ -695,7 +728,7 @@ export default function FinanceDashboard() {
             {/* ── COMPACT CALENDAR TRIGGER ── */}
             <div className="relative">
               <button
-                onClick={(e) => { e.stopPropagation(); setIsCalendarOpen(prev => !prev); }}
+                onClick={(e) => { e.stopPropagation(); setIsCalendarOpen(prev => !prev); setIsActionMenuOpen(false); setIsNotificationsOpen(false); }}
                 className={`flex items-center gap-2 px-3 py-2 ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors`}
               >
                 <CalendarDays className="w-4 h-4" />
@@ -735,39 +768,42 @@ export default function FinanceDashboard() {
             )}
           </div>
 
-            {/* Reset Data */}
-            <button
-              onClick={handleResetAllData}
-              title="Tüm verileri sil"
-              className={`flex items-center gap-1.5 px-2.5 py-2 ${card} text-sm text-rose-500 font-medium hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors rounded-md border border-rose-200 dark:border-rose-900/50`}
-            >
-              <Trash2 className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Verileri Sıfırla</span>
-            </button>
-
-            {/* XML Export */}
-            <button
-              onClick={handleExportXML}
-              title="Tüm verileri XML olarak indir"
-              className={`flex items-center gap-1.5 px-2.5 py-2 ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md`}
-            >
-              <Download className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">XML İndir</span>
-            </button>
-
-            {/* XML Import */}
-            <label
-              title="XML dosyasından veri yükle"
-              className={`flex items-center gap-1.5 px-2.5 py-2 ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors cursor-pointer rounded-md`}
-            >
-              <Upload className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">XML Yükle</span>
-              <input type="file" accept=".xml" className="hidden" onChange={handleImportXML} />
-            </label>
-
             <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-[#18181b] text-white dark:bg-white dark:text-black rounded-md text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
             >
               <Plus className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Yeni Kayıt</span>
             </button>
+
+            {/* Action Menu (Verileri Sıfırla, XML) */}
+            <div className="relative">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setIsActionMenuOpen(prev => !prev); setIsCalendarOpen(false); setIsNotificationsOpen(false); }}
+                className={`flex items-center justify-center p-2 h-[36px] w-[36px] ${card} text-sm ${muted} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md`}
+              >
+                <MoreVertical className="w-4 h-4 shrink-0" />
+              </button>
+
+              {isActionMenuOpen && (
+                <div 
+                  onClick={e => e.stopPropagation()}
+                  className={`absolute top-full right-0 mt-2 w-48 z-50 ${card} shadow-xl rounded-xl border border-slate-100 dark:border-neutral-800 overflow-hidden flex flex-col p-1`}
+                >
+                  <label className={`flex items-center gap-2 px-3 py-2.5 text-sm ${title} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors cursor-pointer rounded-md`}>
+                    <Upload className="w-4 h-4 shrink-0" /> XML Yükle
+                    <input type="file" accept=".xml" className="hidden" onChange={(e) => { handleImportXML(e); setIsActionMenuOpen(false); }} />
+                  </label>
+                  <button onClick={() => { handleExportXML(); setIsActionMenuOpen(false); }} className={`flex items-center gap-2 px-3 py-2.5 text-sm ${title} font-medium hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors rounded-md`}>
+                    <Download className="w-4 h-4 shrink-0" /> XML İndir
+                  </button>
+                  <div className="h-px w-full bg-slate-100 dark:bg-neutral-800 my-1" />
+                  <button onClick={() => { handleResetAllData(); setIsActionMenuOpen(false); }} className={`flex items-center gap-2 px-3 py-2.5 text-sm text-rose-500 font-medium hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors rounded-md`}>
+                    <Trash2 className="w-4 h-4 shrink-0" /> Verileri Sıfırla
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
 
