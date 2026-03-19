@@ -109,6 +109,7 @@ export default function FinanceDashboard() {
   const [hiddenProjections,   setHiddenProjections]   = useState<string[]>(() => loadLS('fcv2_hiddenProjections', []));
   const [paidStatus,          setPaidStatus]          = useState<Record<string, boolean>>(() => loadLS('fcv2_paidStatus', {}));
   const [customOrders,        setCustomOrders]        = useState<Record<string, number>>(() => loadLS('fcv2_customOrders', INIT_ORDERS));
+  const [searchQuery,         setSearchQuery]         = useState('');
   
   /* ---- Feedback Revision states ---- */
   const [editingDueDay, setEditingDueDay] = useState<{id:string, type:'installment'|'recurring'}|null>(null);
@@ -764,6 +765,17 @@ export default function FinanceDashboard() {
   if (!mounted) return null;
 
   /* ============================================================
+     FILTERED DATA FOR VIEW
+     ============================================================ */
+  const lowerQuery = searchQuery.toLowerCase();
+  const searchFilter = (item: { name?: string }) => !lowerQuery || (item.name?.toLowerCase().includes(lowerQuery) ?? false);
+
+  const filteredMatrixRows = engineData.matrixRows.filter(searchFilter);
+  const filteredActiveList = engineData.activeList.filter(searchFilter);
+  const baseFilteredTxns = engineData.allTxns.filter(searchFilter);
+  const finalFilteredTxns = baseFilteredTxns.filter(t => txnFilter === 'all' || t.type === txnFilter);
+
+  /* ============================================================
      JSX
      ============================================================ */
   return (
@@ -1176,10 +1188,10 @@ export default function FinanceDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-neutral-800/60">
-                  {engineData.allTxns.filter(t => txnFilter === 'all' || t.type === txnFilter).length === 0 && (
-                    <tr><td colSpan={5} className={`px-5 py-8 text-center ${muted}`}>Seçili filtreye uygun kayıt yok.</td></tr>
+                  {finalFilteredTxns.length === 0 && (
+                    <tr><td colSpan={5} className={`px-5 py-8 text-center ${muted}`}>{searchQuery ? 'Arama sonucuna uygun işlem bulunamadı.' : 'Seçili filtreye uygun kayıt yok.'}</td></tr>
                   )}
-                  {engineData.allTxns.filter(t => txnFilter === 'all' || t.type === txnFilter).map(txn => (
+                  {finalFilteredTxns.map(txn => (
                     <tr key={txn.id} className="hover:bg-slate-50/70 dark:hover:bg-neutral-900/40 transition-colors group">
                       <td className="px-4 py-3.5">
                         <input 
@@ -1291,9 +1303,9 @@ export default function FinanceDashboard() {
                 </button>
               </div>
               <div className="space-y-3">
-                {engineData.activeList.length === 0 && <p className={`text-center py-4 text-sm ${muted}`}>Aktif taksit veya gider yok.</p>}
+                {filteredActiveList.length === 0 && <p className={`text-center py-4 text-sm ${muted}`}>{searchQuery ? 'Arama sonucuna uygun aktif yükümlülük bulunamadı.' : 'Aktif taksit veya gider yok.'}</p>}
                 
-                {engineData.activeList.map(item => (
+                {filteredActiveList.map(item => (
                   <div key={item.id} className={`group flex justify-between items-center p-2 -mx-2 rounded-lg hover:bg-slate-50 dark:hover:bg-neutral-800/40 transition-colors cursor-pointer ${item.isPaid ? 'opacity-40 grayscale' : ''}`}>
                     <div className="min-w-0 pr-2">
                       <p className={`font-semibold tracking-tight text-sm truncate ${item.isPaid ? muted : title}`}>
@@ -1379,8 +1391,15 @@ export default function FinanceDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-neutral-800/60">
                 
+                {filteredMatrixRows.length === 0 && (
+                  <tr>
+                    <td colSpan={engineData.matrixColumns.length + 1} className={`px-4 py-8 text-center ${muted}`}>
+                      {searchQuery ? 'Arama sonucuna uygun düzenli gider/gelir bulunamadı.' : 'Kayıt bulunamadı.'}
+                    </td>
+                  </tr>
+                )}
                 {/* Unified Matrix Rows (Recurring & One-Time Sorted) */}
-                {engineData.matrixRows.map(item => (
+                {filteredMatrixRows.map(item => (
                   <tr key={item.id} 
                     draggable
                     onDragStart={(e) => handleDragStart(e, item.id)}
