@@ -585,10 +585,11 @@ export default function FinanceDashboard() {
       recurring.forEach(rec => {
         // Build projId accurately for the current month
         const projId = `proj-${rec.id}-${format(currentD, 'yyyy-MM')}`;
+        const isAccountRow = rec.name.toLowerCase() === 'hesap' || rec.name.toLowerCase().includes('bakiye');
         
         const key = `${loopCount}-${rec.id}`; // legacy check fallback just in case
-        const hasOverride = overrides[projId] !== undefined || overrides[key] !== undefined;
-        const amt = overrides[projId] !== undefined ? overrides[projId] : (overrides[key] !== undefined ? overrides[key] : rec.amount);
+        const hasOverride = !isAccountRow && (overrides[projId] !== undefined || overrides[key] !== undefined);
+        const amt = isAccountRow ? rec.amount : (overrides[projId] !== undefined ? overrides[projId] : (overrides[key] !== undefined ? overrides[key] : rec.amount));
         
         const txnId = `rec-${rec.id}-${loopCount}`;
         const isHidden = hiddenProjections.includes(txnId);
