@@ -830,7 +830,11 @@ export default function FinanceDashboard() {
     
     // Auto-heal corrupted transactions caused by the previous prefix mutation bug
     setTransactions(prev => {
-      const clean = prev.filter(t => !t.name.startsWith('one-'));
+      const clean = prev.filter(t => {
+        const isCorruptPrefix = t.name.startsWith('one-');
+        const isSystemLeak = t.name.toLowerCase() === 'hesap' || t.name.toLowerCase().includes('bakiye');
+        return !isCorruptPrefix && !isSystemLeak;
+      });
       if (clean.length !== prev.length) {
         localStorage.setItem('fcv2_transactions', JSON.stringify(clean));
         return clean;
@@ -1576,6 +1580,7 @@ export default function FinanceDashboard() {
                             ) : (
                               <span 
                                 onClick={() => {
+                                  if (item.isSystemRow || item.name.toLowerCase() === 'hesap' || item.name.toLowerCase().includes('bakiye')) return;
                                   if (isCurrentMonthPaid) return;
                                   setEditingCell({ 
                                     monthIdx: idx, 
