@@ -220,28 +220,31 @@ export default function FinanceDashboard() {
       
       if (editingCell.isRecurring) {
         if (val >= 0) {
-          const projId = `proj-${editingCell.itemId}-${format(mDate, 'yyyy-MM')}`;
+          const rawId = editingCell.itemId.startsWith('rec-') ? editingCell.itemId.replace('rec-', '') : editingCell.itemId;
+          const projId = `proj-${rawId}-${format(mDate, 'yyyy-MM')}`;
           setOverrides(prev => ({ ...prev, [projId]: val }));
         }
       } else {
         const targetMonthStart = startOfMonth(mDate);
         const targetMonthEnd = endOfMonth(mDate);
         
+        const rawName = editingCell.itemId.startsWith('one-') ? editingCell.itemId.replace('one-', '') : editingCell.itemId;
+        
         setTransactions(prev => {
           let newTxns = prev.filter(t => {
             const td = parseISO(t.date);
-            const matches = t.name === editingCell.itemId && td >= targetMonthStart && td <= targetMonthEnd && !t.isRecurringBase;
+            const matches = t.name === rawName && td >= targetMonthStart && td <= targetMonthEnd && !t.isRecurringBase;
             return !matches;
           });
           
           if (val > 0) {
             newTxns = [{
               id: `t-${Date.now()}`,
-              name: editingCell.itemId,
+              name: rawName,
               type: editingCell.txnType || 'expense',
               amount: val,
               date: mDate.toISOString(),
-              avatarPrefix: editingCell.itemId.charAt(0).toUpperCase()
+              avatarPrefix: rawName.charAt(0).toUpperCase()
             }, ...newTxns];
           }
           return newTxns;
@@ -818,6 +821,23 @@ export default function FinanceDashboard() {
 
   const currentNetWorth = baseCapital + engineData.totalIncome - engineData.totalExpense;
   const progressPercent = Math.min((currentNetWorth / savingGoal) * 100, 100);
+
+  /* ============================================================
+     HYDRATION & DATA FETCH
+     ============================================================ */
+  useEffect(() => {
+    setMounted(true);
+    
+    // Auto-heal corrupted transactions caused by the previous prefix mutation bug
+    setTransactions(prev => {
+      const clean = prev.filter(t => !t.name.startsWith('one-'));
+      if (clean.length !== prev.length) {
+        localStorage.setItem('fcv2_transactions', JSON.stringify(clean));
+        return clean;
+      }
+      return prev;
+    });
+  }, []);
 
   /* ============================================================
      STYLE SHORTCUTS
