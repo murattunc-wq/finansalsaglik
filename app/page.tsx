@@ -729,16 +729,19 @@ export default function FinanceDashboard() {
     const accountRow = matrixRows.find(r => r.name.toLowerCase() === 'hesap' || r.name.toLowerCase().includes('bakiye'));
     if (accountRow && matrixColumns.length > 0) {
       let currentBalance = accountRow.cells[0] || baseCapital;
+      
+      // Cache original values before mutating so projection stays mathematically pure
+      const originalAccountValues: Record<number, number> = {};
+      for (const mIdx in accountRow.cells) {
+        originalAccountValues[mIdx] = accountRow.cells[mIdx];
+      }
+
       // We start projecting from month index 1 (the second month)
       for (let m = 1; m < matrixColumns.length; m++) {
-        // The balance for month M is the balance of month M-1 PLUS the net cash flow of month M-1.
-        // Wait, netFlows[M-1] contains the actual incomes minus unpaid expenses.
-        // But remember, accountRow itself is an 'income' in our engine, so its base value was ADDED to netFlows[M-1]!
-        // We must SUBTRACT the account row's own base value from the net flow, otherwise the balance doubles every month.
-        let flowForPrevMonth = netFlows[m - 1];
-        let accountSelfValuePrevMonth = accountRow.cells[m - 1] || 0;
+        let flowForPrevMonth = netFlows[m - 1] || 0;
+        let originalAccountValPrev = originalAccountValues[m - 1] || 0;
         
-        currentBalance += (flowForPrevMonth - accountSelfValuePrevMonth);
+        currentBalance += (flowForPrevMonth - originalAccountValPrev);
         accountRow.cells[m] = currentBalance;
       }
     }
