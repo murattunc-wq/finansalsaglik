@@ -557,6 +557,7 @@ export default function FinanceDashboard() {
     const monthlyBarsPaid:   Record<string,number>  = {};
     const monthlyIncome: Record<string,number>      = {};
     const incomeSources: Record<string,number>      = {};
+    const netFlows: number[] = new Array(60).fill(0);
     
     // Projections & Transactions
     const allTxns: Transaction[] = [...transactions];
@@ -618,6 +619,7 @@ export default function FinanceDashboard() {
             totalIncome += mappedAmt; 
             monthlyIncome[mk] = (monthlyIncome[mk]||0) + mappedAmt;
             incomeSources[rec.id] = (incomeSources[rec.id]||0) + mappedAmt;
+            if (mIdx !== -1) netFlows[mIdx] += mappedAmt;
           }
           else if (isPaidThisMonth) {
             // Paid this month → track separately (shown as light gray in chart), NOT deducted from balance
@@ -628,6 +630,7 @@ export default function FinanceDashboard() {
             totalExpense += mappedAmt;
             expenseCategories[rec.category] = (expenseCategories[rec.category]||0) + mappedAmt;
             monthlyBarsUnpaid[mk] += mappedAmt;
+            if (mIdx !== -1) netFlows[mIdx] -= mappedAmt;
           }
           // Only push to transaction list if income OR not-yet-paid expense OR it's a non-current month
           if (rec.type === 'income' || !isPaidThisMonth || !isThisMonth) {
@@ -643,10 +646,24 @@ export default function FinanceDashboard() {
         
         const txnId = `inst-${inst.id}-${loopCount}`;
         if (monthsPassed >= 0 && monthsPassed < totalInstallments && !hiddenProjections.includes(txnId)) {
-          totalExpense += inst.monthly;
-          expenseCategories['Taksitler'] = (expenseCategories['Taksitler']||0) + inst.monthly;
-          monthlyBarsUnpaid[mk] += inst.monthly;
-          allTxns.push({ id: txnId, name: `${inst.name} (Taksit)`, type: 'expense', amount: inst.monthly, date: currentD.toISOString(), isRecurringBase: true, avatarPrefix: inst.name.charAt(0) });
+          const thisMonthNow = new Date();
+          const isThisMonth = currentD.getMonth() === thisMonthNow.getMonth() && currentD.getFullYear() === thisMonthNow.getFullYear();
+          const isPaidThisMonth = isThisMonth && (inst.dueDay || 1) < thisMonthNow.getDate();
+
+          if (isPaidThisMonth) {
+            monthlyBarsPaid[mk] += inst.monthly;
+          } else {
+            totalExpense += inst.monthly;
+            expenseCategories['Taksitler'] = (expenseCategories['Taksitler']||0) + inst.monthly;
+            monthlyBarsUnpaid[mk] += inst.monthly;
+            const mStr = format(currentD, 'MMM yy', { locale: tr }).toUpperCase();
+            const instMIdx = matrixColumns.indexOf(mStr);
+            if (instMIdx !== -1) netFlows[instMIdx] -= inst.monthly;
+          }
+
+          if (!isPaidThisMonth || !isThisMonth) {
+            allTxns.push({ id: txnId, name: `${inst.name} (Taksit)`, type: 'expense', amount: inst.monthly, date: currentD.toISOString(), isRecurringBase: true, avatarPrefix: inst.name.charAt(0) });
+          }
         }
       });
 
@@ -672,11 +689,13 @@ export default function FinanceDashboard() {
           totalIncome += t.amount;
           if (monthlyIncome[mk] !== undefined) monthlyIncome[mk] += t.amount;
           incomeSources[t.id] = (incomeSources[t.id]||0) + t.amount;
+          if (mIdx !== -1) netFlows[mIdx] += t.amount;
         }
         if (t.type === 'expense') {
           totalExpense += t.amount;
           expenseCategories['Tek Seferlik'] = (expenseCategories['Tek Seferlik']||0) + t.amount;
           if (monthlyBarsUnpaid[mk] !== undefined) monthlyBarsUnpaid[mk] += t.amount;
+          if (mIdx !== -1) netFlows[mIdx] -= t.amount;
         }
 
         if (mIdx !== -1 && t.type !== 'transfer') {
@@ -705,6 +724,25 @@ export default function FinanceDashboard() {
       const orderB = customOrders[b.id] || 0;
       return orderA - orderB || a.name.localeCompare(b.name);
     });
+    
+    // --- DYNAMIC BALANCE ("HESAP") PROJECTION ---
+    const accountRow = matrixRows.find(r => r.name.toLowerCase() === 'hesap' || r.name.toLowerCase().includes('bakiye'));
+    if (accountRow && matrixColumns.length > 0) {
+      let currentBalance = accountRow.cells[0] || baseCapital;
+      // We start projecting from month index 1 (the second month)
+      for (let m = 1; m < matrixColumns.length; m++) {
+        // The balance for month M is the balance of month M-1 PLUS the net cash flow of month M-1.
+        // Wait, netFlows[M-1] contains the actual incomes minus unpaid expenses.
+        // But remember, accountRow itself is an 'income' in our engine, so its base value was ADDED to netFlows[M-1]!
+        // We must SUBTRACT the account row's own base value from the net flow, otherwise the balance doubles every month.
+        let flowForPrevMonth = netFlows[m - 1];
+        let accountSelfValuePrevMonth = accountRow.cells[m - 1] || 0;
+        
+        currentBalance += (flowForPrevMonth - accountSelfValuePrevMonth);
+        accountRow.cells[m] = currentBalance;
+      }
+    }
+
     
     // Compute Active Liabilities for Sidebar
     const today = new Date();
@@ -891,7 +929,7 @@ export default function FinanceDashboard() {
       <div className="max-w-[1500px] mx-auto p-4 md:p-8 space-y-6">
 
         {/* ── PAGE HEADER ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-row items-center justify-between gap-4">
           <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${title}`}>Finansal Kokpit</h1>
           
           {/* Action Buttons Aligned Right */}
@@ -1396,7 +1434,7 @@ export default function FinanceDashboard() {
             <table className="w-full text-sm text-left whitespace-nowrap table-fixed min-w-[1200px]">
               <thead className={`text-[11px] uppercase tracking-wider ${muted} border-b border-slate-100 dark:border-neutral-800`}>
                 <tr>
-                  <th className="px-5 py-3 font-semibold w-[220px]">Kural / İşlem</th>
+                  <th className="sticky left-0 z-20 bg-white dark:bg-[#09090b] px-5 py-3 font-semibold w-[220px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)]">Kural / İşlem</th>
                   {engineData.matrixColumns.map(m => <th key={m} className="px-4 py-3 font-semibold text-right w-[110px]">{m}</th>)}
                 </tr>
               </thead>
@@ -1418,7 +1456,7 @@ export default function FinanceDashboard() {
                     onDrop={(e) => handleDrop(e, item.id)}
                     className={`hover:bg-slate-50/60 dark:hover:bg-neutral-900/30 transition-colors group cursor-grab active:cursor-grabbing ${draggedId === item.id ? 'opacity-50 grayscale bg-slate-100 dark:bg-neutral-800' : ''}`}
                   >
-                    <td className={`px-5 py-4 font-medium ${title}`}>
+                    <td className={`sticky left-0 z-10 bg-white dark:bg-[#09090b] px-5 py-4 font-medium ${title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] group-hover:bg-slate-50/60 dark:group-hover:bg-neutral-900/30 transition-colors`}>
                       <div className="flex items-center gap-2 group/name">
                         {item.type==='income'
                           ? <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>
