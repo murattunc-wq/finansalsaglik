@@ -591,8 +591,13 @@ export default function FinanceDashboard() {
         const isAccountRow = rec.name.toLowerCase() === 'hesap' || rec.name.toLowerCase().includes('bakiye');
         
         const key = `${loopCount}-${rec.id}`; // legacy check fallback just in case
-        const hasOverride = !isAccountRow && (overrides[projId] !== undefined || overrides[key] !== undefined);
-        const amt = isAccountRow ? rec.amount : (overrides[projId] !== undefined ? overrides[projId] : (overrides[key] !== undefined ? overrides[key] : rec.amount));
+        
+        const thisMonthNow = new Date();
+        const isCurrentMonth = currentD.getMonth() === thisMonthNow.getMonth() && currentD.getFullYear() === thisMonthNow.getFullYear();
+        
+        // Accept manual overrides on Account rows ONLY for the current chronological month context
+        const hasOverride = (!isAccountRow || isCurrentMonth) && (overrides[projId] !== undefined || overrides[key] !== undefined);
+        const amt = hasOverride ? (overrides[projId] !== undefined ? overrides[projId] : overrides[key]) : rec.amount;
         
         const txnId = `rec-${rec.id}-${loopCount}`;
         const isHidden = hiddenProjections.includes(txnId);
@@ -740,12 +745,26 @@ export default function FinanceDashboard() {
         originalAccountValues[mIdx] = accountRow.cells[mIdx];
       }
 
+      // Check if month 0 is the current month and was overridden
+      const nowMap = format(new Date(), 'MMM yy', { locale: tr }).toUpperCase();
+      if (matrixColumns[0] === nowMap && accountRow.baseItem && originalAccountValues[0] !== accountRow.baseItem.amount) {
+        currentBalance = originalAccountValues[0];
+        accountRow.cells[0] = currentBalance;
+      }
+
       // We start projecting from month index 1 (the second month)
       for (let m = 1; m < matrixColumns.length; m++) {
         let flowForPrevMonth = netFlows[m - 1] || 0;
         let originalAccountValPrev = originalAccountValues[m - 1] || 0;
         
         currentBalance += (flowForPrevMonth - originalAccountValPrev);
+        
+        // Reset the milestone if this is the CURRENT real-world month and the user provided a manual override
+        const isCurrentMonthCol = matrixColumns[m] === nowMap;
+        if (isCurrentMonthCol && accountRow.baseItem && originalAccountValues[m] !== accountRow.baseItem.amount) {
+          currentBalance = originalAccountValues[m];
+        }
+
         accountRow.cells[m] = currentBalance;
       }
 
@@ -1563,11 +1582,13 @@ export default function FinanceDashboard() {
                       const colDate = parse(month, 'MMM yy', new Date(), { locale: tr });
                       const now = new Date();
                       const isCurrentMonthCol = colDate.getMonth() === now.getMonth() && colDate.getFullYear() === now.getFullYear();
+                      const isPastMonth = colDate.getFullYear() < now.getFullYear() || (colDate.getFullYear() === now.getFullYear() && colDate.getMonth() < now.getMonth());
+                      
                       // If it's a recurring expense and dueDay already passed this month → treat as paid/locked
                       const isCurrentMonthPaid = item.isRecurring && item.type === 'expense' && isCurrentMonthCol && (item.baseItem?.dueDay || 1) < now.getDate();
                       const isEditing = !isCurrentMonthPaid && editingCell?.monthIdx===idx && editingCell?.itemId===(item.isRecurring ? item.baseItem.id : item.name);
                       return (
-                        <td key={month} className="px-4 py-4 text-right">
+                        <td key={month} className={`px-4 py-4 text-right ${isPastMonth ? 'opacity-50' : ''}`}>
                           <div className="relative h-6 flex justify-end items-center">
                             {isEditing ? (
                               <input autoFocus type="text"
@@ -1579,26 +1600,36 @@ export default function FinanceDashboard() {
                               />
                             ) : (
                               <span 
-                                onClick={() => {
-                                  if (item.isSystemRow || item.name.toLowerCase() === 'hesap' || item.name.toLowerCase().includes('bakiye')) return;
+                                onClick={(e) => {
+                                  if (item.isSystemRow) return;
+                                  const isAccountRow = item.name.toLowerCase() === 'hesap' || item.name.toLowerCase().includes('bakiye');
+                                  if (isAccountRow && !isCurrentMonthCol) return; // Only allow editing Account balance on CURRENT month
                                   if (isCurrentMonthPaid) return;
+                                  
+                                  e.stopPropagation();
+                                  setIsCalendarOpen(false); 
+                                  setIsActionMenuOpen(false);
+                                  setActiveTxnMenu(null);
+                                  setActiveMatrixMenu(null);
                                   setEditingCell({ 
                                     monthIdx: idx, 
-                                    itemId: item.isRecurring ? item.baseItem.id : item.name,
-                                    isRecurring: item.isRecurring,
-                                    txnType: item.type
+                                    itemId: item.isRecurring ? item.baseItem.id : item.name, 
+                                    isRecurring: item.isRecurring, 
+                                    txnType: item.type 
                                   });
-                                  setEditValue(val !== undefined ? val.toString() : '');
+                                  setEditValue(val?.toString() || '');
                                 }}
-                                className={`font-semibold px-2 py-1 -mr-2 rounded transition-colors ${
+                                className={`rounded px-1.5 py-0.5 -mr-1.5 transition-colors ${item.isSystemRow ? 'pointer-events-none' : ''} ${
                                   isCurrentMonthPaid
-                                    ? 'text-slate-300 dark:text-neutral-600 line-through cursor-default'
-                                    : val!==undefined
-                                      ? 'cursor-pointer hover:bg-slate-200 dark:hover:bg-neutral-800'
+                                    ? 'text-slate-400 dark:text-neutral-600 line-through cursor-default'
+                                    : val !== undefined
+                                      ? 'font-medium cursor-pointer hover:bg-slate-200 dark:hover:bg-neutral-800'
                                       : 'text-slate-300 dark:text-neutral-700 hover:text-slate-400 cursor-pointer'
                                 }`}
                               >
-                                {val !== undefined ? `₺${Math.abs(val).toLocaleString('tr-TR')}` : '-'}
+                                {val !== undefined 
+                                  ? `₺${val.toLocaleString('tr-TR')}` 
+                                  : <span className="opacity-30">-</span>}
                               </span>
                             )}
                           </div>
