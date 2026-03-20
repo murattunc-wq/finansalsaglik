@@ -575,7 +575,7 @@ export default function FinanceDashboard() {
     }
 
     type MatrixCellData = { [mIdx: number]: number };
-    const matrixRowsMap = new Map<string, { id: string, name: string, type: 'income'|'expense', isRecurring: boolean, baseItem?: any, cells: MatrixCellData }>();
+    const matrixRowsMap = new Map<string, { id: string, name: string, type: 'income'|'expense', isRecurring: boolean, baseItem?: any, cells: MatrixCellData, isSystemRow?: boolean }>();
 
     while (currentD <= startOfMonth(endD) && loopCount < 60) {
       const mk = format(currentD, 'MMM', { locale: tr });
@@ -744,7 +744,26 @@ export default function FinanceDashboard() {
         currentBalance += (flowForPrevMonth - originalAccountValPrev);
         accountRow.cells[m] = currentBalance;
       }
+
+      // Add "Dönem Sonu Bakiyesi" (End of Month Balance) row at the bottom
+      const endOfMonthRow = {
+        id: 'sys-end-of-month',
+        name: 'Dönem Sonu Bakiyesi',
+        type: 'income' as const,
+        isRecurring: false,
+        isSystemRow: true,
+        cells: {} as MatrixCellData
+      };
+      
+      for (let m = 0; m < matrixColumns.length; m++) {
+        let flowForThisMonth = netFlows[m] || 0;
+        let originalAccountVal = originalAccountValues[m] || 0;
+        endOfMonthRow.cells[m] = (accountRow.cells[m] || 0) + (flowForThisMonth - originalAccountVal);
+      }
+      
+      matrixRows.push(endOfMonthRow);
     }
+
 
     
     // Compute Active Liabilities for Sidebar
@@ -1453,16 +1472,16 @@ export default function FinanceDashboard() {
                 {/* Unified Matrix Rows (Recurring & One-Time Sorted) */}
                 {filteredMatrixRows.map(item => (
                   <tr key={item.id} 
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, item.id)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, item.id)}
-                    className={`hover:bg-slate-50/60 dark:hover:bg-neutral-900/30 transition-colors group cursor-grab active:cursor-grabbing ${draggedId === item.id ? 'opacity-50 grayscale bg-slate-100 dark:bg-neutral-800' : ''}`}
+                    draggable={!item.isSystemRow}
+                    onDragStart={(e) => { if(!item.isSystemRow) handleDragStart(e, item.id); }}
+                    onDragOver={(e) => { if(!item.isSystemRow) handleDragOver(e); }}
+                    onDrop={(e) => { if(!item.isSystemRow) handleDrop(e, item.id); }}
+                    className={`${item.isSystemRow ? 'bg-slate-50 dark:bg-neutral-900/40 border-t-2 border-slate-200 dark:border-neutral-800' : 'hover:bg-slate-50/60 dark:hover:bg-neutral-900/30'} transition-colors group ${!item.isSystemRow ? 'cursor-grab active:cursor-grabbing' : ''} ${draggedId === item.id ? 'opacity-50 grayscale bg-slate-100 dark:bg-neutral-800' : ''}`}
                   >
-                    <td className={`sticky left-0 z-10 bg-white dark:bg-[#09090b] px-5 py-4 font-medium ${title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] group-hover:bg-slate-50/60 dark:group-hover:bg-neutral-900/30 transition-colors`}>
+                    <td className={`sticky left-0 z-10 ${item.isSystemRow ? 'bg-slate-50 dark:bg-neutral-900/40' : 'bg-white dark:bg-[#09090b]'} px-5 py-4 font-medium ${item.isSystemRow ? 'text-slate-900 dark:text-white font-bold' : title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] ${!item.isSystemRow ? 'group-hover:bg-slate-50/60 dark:group-hover:bg-neutral-900/30' : ''} transition-colors`}>
                       <div className="flex items-center gap-2 group/name">
                         {item.type==='income'
-                          ? <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>
+                          ? <ArrowUpRight className={`w-3.5 h-3.5 ${item.isSystemRow ? 'text-indigo-500' : 'text-emerald-500'} shrink-0`}/>
                           : <ArrowDownRight className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
                         
                         {/* Editable Rule Names (only for recurring base) */}
@@ -1483,30 +1502,32 @@ export default function FinanceDashboard() {
                         )}
 
                         {/* Actions: Move Up, Move Down, Delete */}
-                        <div className="relative">
-                          <button onClick={e=>{e.stopPropagation();setActiveMatrixMenu(activeMatrixMenu===item.id?null:item.id);}} className={`p-0.5 rounded ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-neutral-700 opacity-0 group-hover:opacity-100 transition-opacity`}>
-                            <MoreVertical className="w-3.5 h-3.5"/>
-                          </button>
-                          {activeMatrixMenu===item.id && (
-                            <div className="absolute left-6 top-0 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[140px]">
-                              <button onClick={()=>handleOrderChange(item.id, 'up')} className="px-3 py-2 text-xs text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 flex items-center w-full font-medium whitespace-nowrap">
-                                <span>↑ Yukarı Taşı</span>
-                              </button>
-                              <button onClick={()=>handleOrderChange(item.id, 'down')} className="px-3 py-2 text-xs text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 flex items-center w-full font-medium whitespace-nowrap border-b border-slate-100 dark:border-neutral-800">
-                                <span>↓ Aşağı Taşı</span>
-                              </button>
-                              {item.isRecurring ? (
-                                <button onClick={()=>handleRecurringDelete(item.baseItem.id)} className="px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 w-full font-medium whitespace-nowrap">
-                                  <Trash2 className="w-3.5 h-3.5"/> Sil
+                        {!item.isSystemRow && (
+                          <div className="relative">
+                            <button onClick={e=>{e.stopPropagation();setActiveMatrixMenu(activeMatrixMenu===item.id?null:item.id);}} className={`p-0.5 rounded ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-neutral-700 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                              <MoreVertical className="w-3.5 h-3.5"/>
+                            </button>
+                            {activeMatrixMenu===item.id && (
+                              <div className="absolute left-6 top-0 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[140px]">
+                                <button onClick={()=>handleOrderChange(item.id, 'up')} className="px-3 py-2 text-xs text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 flex items-center w-full font-medium whitespace-nowrap">
+                                  <span>↑ Yukarı Taşı</span>
                                 </button>
-                              ) : (
-                                <button onClick={()=>handleTxnDeleteByName(item.name)} className="px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 w-full font-medium whitespace-nowrap">
-                                  <Trash2 className="w-3.5 h-3.5"/> Sil
+                                <button onClick={()=>handleOrderChange(item.id, 'down')} className="px-3 py-2 text-xs text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 flex items-center w-full font-medium whitespace-nowrap border-b border-slate-100 dark:border-neutral-800">
+                                  <span>↓ Aşağı Taşı</span>
                                 </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                                {item.isRecurring ? (
+                                  <button onClick={()=>handleRecurringDelete(item.baseItem.id)} className="px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 w-full font-medium whitespace-nowrap">
+                                    <Trash2 className="w-3.5 h-3.5"/> Sil
+                                  </button>
+                                ) : (
+                                  <button onClick={()=>handleTxnDeleteByName(item.name)} className="px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 w-full font-medium whitespace-nowrap">
+                                    <Trash2 className="w-3.5 h-3.5"/> Sil
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </td>
 
