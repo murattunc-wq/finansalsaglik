@@ -20,8 +20,6 @@ function loadLS<T>(key: string, fallback: T): T {
 /* ============================================================
    PARSER
    ============================================================ */
-
-// Current real-world month (1-12)
 const NOW_MONTH = new Date().getMonth() + 1;
 
 const MONTH_NAME_MAP: Record<string, number> = {
@@ -44,65 +42,63 @@ const MONTH_LABEL: Record<number, string> = {
   7:'Temmuz',8:'Ağustos',9:'Eylül',10:'Ekim',11:'Kasım',12:'Aralık'
 };
 
-type ParsedEntry = {
-  month: number;
-  label: string;
-  amount: number;
-  type: 'income'|'expense';
-};
+type ParsedEntry = { month: number; label: string; amount: number; type: 'income'|'expense' };
 
-/** Parse "9k", "9.000", "9", "34" → number in TL */
+/** Parse "9k", "23k", "9.000" → TL amount */
 function parseAmt(str: string): number | null {
   const s = str.trim().toLowerCase().replace(',','.');
-  // e.g. "9k", "9.5k"
   const kMatch = s.match(/^(\d+(?:\.\d+)?)k$/);
   if (kMatch) return parseFloat(kMatch[1]) * 1000;
-  // plain number
   const plain = parseFloat(s);
   if (!isNaN(plain) && plain > 0) return plain;
   return null;
 }
 
-/** Extract all month numbers from a text chunk */
+/** Detect if a word is a month name, returns month number or null */
+function wordToMonth(word: string): number | null {
+  const lower = word.toLowerCase().replace(/[^a-zşğıüöç]/gi,'');
+  return MONTH_NAME_MAP[lower] ?? null;
+}
+
+/** Extract month numbers from a segment like "5.6.Ay", "7.8.9.ay", "nisan" */
 function findMonths(text: string): number[] {
   const lower = text.toLowerCase();
   const found: number[] = [];
 
-  // Named months (handle comma-separated: "temmuz, agustos, eylul")
-  for (const [name, num] of Object.entries(MONTH_NAME_MAP)) {
-    if (lower.includes(name) && !found.includes(num)) {
-      found.push(num);
+  // Named months first (longest match first to avoid "mar" matching inside "mart" etc.)
+  const sortedKeys = Object.keys(MONTH_NAME_MAP).sort((a,b) => b.length - a.length);
+  for (const name of sortedKeys) {
+    if (lower.includes(name) && !found.includes(MONTH_NAME_MAP[name])) {
+      found.push(MONTH_NAME_MAP[name]);
     }
   }
   if (found.length > 0) return found;
 
   // "mevcut" = current month
-  if (lower.includes('mevcut')) {
-    return [NOW_MONTH];
-  }
+  if (/mevcut/.test(lower)) return [NOW_MONTH];
 
-  // Numeric: "5.6.ay", "7.8.9.ay", "5.", "5. ay"
-  // Extract sequences of dot-separated numbers optionally followed by "ay"
-  const numPattern = /(\d+(?:\.\d+)*)\s*\.?\s*(?:ay)?/gi;
+  // Numeric: "5.6.ay", "7.8.9.ay", "5.", "5"
+  const numericPattern = /\b(\d+(?:\.\d+)*)\s*\.?\s*(?:ay)?\b/gi;
   let m: RegExpExecArray | null;
-  while ((m = numPattern.exec(lower)) !== null) {
+  while ((m = numericPattern.exec(lower)) !== null) {
     const parts = m[1].split('.').filter(Boolean);
     for (const p of parts) {
       const n = parseInt(p, 10);
       if (n >= 1 && n <= 12 && !found.includes(n)) found.push(n);
     }
   }
-
   return found;
 }
 
-/** Is this likely income or expense */
-function guessType(text: string): 'income' | 'expense' {
+function guessType(text: string): 'income'|'expense' {
   const l = text.toLowerCase();
-  if (/gelir|getiri|kira\s*gelir|maaş|maas|faiz/.test(l)) return 'income';
+  if (/gelir|getiri|maaş|maas|kira\s*gelir|faiz|nakit\s*gir/.test(l)) return 'income';
   return 'expense';
 }
 
+/**
+ * Main parser — returns flat list of entries with month, label, amount, type
+ */
 function parseNotes(text: string): ParsedEntry[] {
   const entries: ParsedEntry[] = [];
   const lines = text.split('\n');
@@ -111,50 +107,105 @@ function parseNotes(text: string): ParsedEntry[] {
     const line = rawLine.trim();
     if (!line || line.startsWith('//') || line.startsWith('#')) continue;
 
-    // Skip pure calculation lines like "35k + 7k = 42k"
-    if (/^\d+[k\s]*[+\-=×÷*/]/.test(line)) continue;
+    const lower = line.toLowerCase();
 
-    // Split by '/' for multi-part lines
-    const parts = line.split('/').map(p => p.trim()).filter(Boolean);
-
-    // Extract the entity label from first part (e.g. "23 kt mevcut" → label="kt")
-    const firstPart = parts[0];
-    const entityLabel = firstPart
-      .replace(/\d+(?:\.\d+)?k?/gi, '') // remove numbers/amounts
-      .replace(/mevcut|bakiye/gi, '')
-      .replace(/[💰🎯]/g, '')
-      .trim()
-      .replace(/\s+/g, ' ')
-      || 'Not';
-
-    for (let i = 0; i < parts.length; i++) {
-      const seg = parts[i];
-      const segLower = seg.toLowerCase();
-
-      // Extract all amount tokens (e.g. "9k", "23", "37k")
-      const amtMatches = seg.match(/\d+(?:\.\d+)?k?/gi) || [];
-      const amounts: number[] = amtMatches.map(t => parseAmt(t)).filter((a): a is number => a !== null);
-
-      // Extract months from this segment
-      let months = findMonths(seg);
-
-      // If first part + "mevcut" and no explicit month → current month
-      if (i === 0 && months.length === 0 && /mevcut/i.test(seg)) {
-        months = [NOW_MONTH];
-      }
-
-      // If no month found in segment, also try full line for single-segment lines
-      if (months.length === 0 && parts.length === 1) {
-        months = findMonths(line);
-      }
-
-      if (amounts.length > 0 && months.length > 0) {
-        const label = i === 0 ? entityLabel : entityLabel;
-        const type = guessType(seg + ' ' + firstPart);
-        const amount = amounts[0]; // use first amount in segment
-        for (const m of months) {
-          entries.push({ month: m, label, amount, type });
+    /* ── CASE 1: Calculation line "MONTH? X + Y = Z"
+       Treats the RESULT (Z) as income for that month.
+       e.g. "mart 35kalan + 7k nakit = 42k" → Mart +42k income
+    ─────────────────────────────────────────────────────── */
+    const calcMatch = line.match(/^([a-zşğıüöçA-ZŞĞIÜÖÇı]+\s+)?[\d.,]+k?\s*\+\s*[\d.,]+k?\s*=\s*([\d.,]+k?)/i);
+    if (calcMatch) {
+      const resultStr = calcMatch[2];
+      const resultAmt = parseAmt(resultStr.trim());
+      if (resultAmt !== null) {
+        // Detect month prefix
+        let month = NOW_MONTH;
+        if (calcMatch[1]) {
+          const m = wordToMonth(calcMatch[1].trim());
+          if (m) month = m;
         }
+        const label = 'Nakit / Mevcut';
+        entries.push({ month, label, amount: resultAmt, type: 'income' });
+      }
+      continue;
+    }
+
+    /* ── CASE 2: Month-prefixed line "MONTHNAME AMOUNT description"
+       e.g. "mart 37k vergi, emlak ve ito borcu"
+       e.g. "💰mart 37k vergi"
+    ─────────────────────────────────────────────────────── */
+    // Strip emoji / symbols
+    const cleanLine = line.replace(/[💰🎯✓✗→]/g, '').trim();
+    
+    // Try to match: optional-month AMOUNT rest-of-line (no '/' separator, no 'mevcut')
+    const monthPrefixMatch = cleanLine.match(/^([a-zşğıüöçA-ZŞĞIÜÖÇı]+)\s+([\d.,]+k?)\s*(.*)$/i);
+    if (monthPrefixMatch) {
+      const possibleMonth = wordToMonth(monthPrefixMatch[1]);
+      if (possibleMonth !== null) {
+        const amt = parseAmt(monthPrefixMatch[2]);
+        if (amt !== null) {
+          const desc = monthPrefixMatch[3].trim() || monthPrefixMatch[1];
+          const type = guessType(desc || cleanLine);
+          entries.push({ month: possibleMonth, label: desc || monthPrefixMatch[1], amount: amt, type });
+          continue;
+        }
+      }
+    }
+
+    /* ── CASE 3: Multi-segment line with '/'
+       e.g. "23k kt mevcut / 9k taksit 5.6.Ay / 7k 7.8.9.ay"
+    ─────────────────────────────────────────────────────── */
+    if (line.includes('/')) {
+      const parts = line.split('/').map(p => p.trim()).filter(Boolean);
+      const firstPart = parts[0];
+
+      // Build entity label from the first part
+      const entityLabel = firstPart
+        .replace(/\d+(?:\.\d+)?k?/gi, '')
+        .replace(/mevcut|bakiye/gi, '')
+        .replace(/[💰🎯]/g, '')
+        .trim().replace(/\s+/g, ' ') || 'Not';
+
+      for (let i = 0; i < parts.length; i++) {
+        const seg = parts[i];
+        // Find amounts
+        const amtMatches = seg.match(/\d+(?:\.\d+)?k?/gi) ?? [];
+        const amounts = amtMatches.map(t => parseAmt(t)).filter((a): a is number => a !== null);
+        if (amounts.length === 0) continue;
+
+        // Find months
+        let months: number[] = [];
+        if (i === 0 && /mevcut/.test(seg.toLowerCase())) {
+          months = [NOW_MONTH];
+        } else {
+          months = findMonths(seg);
+        }
+        if (months.length === 0) continue;
+
+        const type = guessType(seg + ' ' + firstPart);
+        for (const amt of amounts.slice(0,1)) {
+          for (const m of months) {
+            entries.push({ month: m, label: entityLabel, amount: amt, type });
+          }
+        }
+      }
+      continue;
+    }
+
+    /* ── CASE 4: Simple "AMOUNT MONTHNAME" or "MONTHNAME AMOUNT"
+       Already covered by CASE 2 — but catch remaining patterns
+       e.g. standalone "65k nisan" (if no month prefix match before)
+    ─────────────────────────────────────────────────────── */
+    // Extract all amounts
+    const amtTokens = (cleanLine.match(/\d+(?:\.\d+)?k?/gi) ?? []).map(t => parseAmt(t)).filter((a): a is number => a !== null);
+    const months = findMonths(cleanLine);
+    if (amtTokens.length > 0 && months.length > 0) {
+      const restLabel = cleanLine.replace(/\d+(?:\.\d+)?k?/gi, '').replace(/[a-zşğıüöçA-ZŞĞIÜÖÇı]+/g, w => {
+        return wordToMonth(w) ? '' : w;
+      }).trim().replace(/\s+/g, ' ') || 'Not';
+      const type = guessType(cleanLine);
+      for (const m of months) {
+        entries.push({ month: m, label: restLabel || 'Not', amount: amtTokens[0], type });
       }
     }
   }
@@ -163,20 +214,19 @@ function parseNotes(text: string): ParsedEntry[] {
 }
 
 /* ============================================================
+   DEMO NOTES
+   ============================================================ */
+const DEMO_NOTES = `23k kt mevcut / 9k taksit 5.6.Ay / 7k 7.8.9.ay
+34k ykb mevcut / 29k 5. / 19k 6.ay
+8k vakifbank mevcut / 5k 5.ay
+
+mart 37k vergi, emlak ve ito borcu
+
+mart 35k kalan + 7k nakit = 42k`.trim();
+
+/* ============================================================
    COMPONENT
    ============================================================ */
-
-const DEMO_NOTES = `23 kt mevcut / 9k taksit 5.6.Ay / 7k 7.8.9.ay
-34 ykb mevcut / 29k 5. / 19k 6.ay
-8 vakifbank mevcut / 5k 5.ay
-
-65k nisan
-43k mayis
-32k haziran
-7k temmuz, agustos, eylul
-
-💰37k vergi, emlak ve ito borcu.`;
-
 export default function NotesPage() {
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
@@ -197,10 +247,9 @@ export default function NotesPage() {
     if (mounted) localStorage.setItem('fcv2_daily_notes', JSON.stringify(notes));
   }, [notes, mounted]);
 
-  /* ---- Parse notes ---- */
+  /* ---- Parse ---- */
   const allEntries = useMemo(() => parseNotes(notes), [notes]);
 
-  // Group by month
   const byMonth = useMemo(() => {
     const map: Record<number, ParsedEntry[]> = {};
     for (const e of allEntries) {
@@ -231,17 +280,17 @@ export default function NotesPage() {
       else setCalcInput(calcInput==='0'&&val!=='.'?val:calcInput+val);
     } else if (['+','-','×','÷'].includes(val)) {
       if (calcOp && calcPrev && !newNum) {
-        const r=evaluate(calcPrev,calcInput,calcOp); setCalcInput(String(r)); setCalcPrev(String(r));
+        const r = evaluate(calcPrev,calcInput,calcOp); setCalcInput(String(r)); setCalcPrev(String(r));
       } else setCalcPrev(calcInput);
       setCalcOp(val); setNewNum(true);
     } else if (val==='⌫') {
       if (calcInput.length>1) setCalcInput(calcInput.slice(0,-1));
       else { setCalcInput('0'); setNewNum(true); }
     } else if (val==='%') {
-      const n=parseFloat(calcInput); if(!isNaN(n)) setCalcInput(String(n/100));
+      const n = parseFloat(calcInput); if (!isNaN(n)) setCalcInput(String(n/100));
     } else if (val==='=') {
-      if (calcOp&&calcPrev) {
-        const r=evaluate(calcPrev,calcInput,calcOp);
+      if (calcOp && calcPrev) {
+        const r = evaluate(calcPrev,calcInput,calcOp);
         setCalcInput(String(r)); setCalcPrev(null); setCalcOp(null); setNewNum(true);
       }
     } else if (val==='C') {
@@ -279,13 +328,9 @@ export default function NotesPage() {
               {isDark?<Sun className="w-5 h-5"/>:<Moon className="w-5 h-5"/>}
             </button>
             <div className="relative">
-              <button onClick={(e)=>{e.stopPropagation();setIsProfileOpen(p=>!p);}}
-                className="flex p-1 rounded-full sm:rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 text-sm font-semibold"
-                  style={{background: sessionUser?.image?'transparent':'#e2e8f0'}}>
-                  {sessionUser?.image
-                    ? <img src={sessionUser.image} alt="" className="w-8 h-8 rounded-full"/>
-                    : <span className="text-slate-600">{(sessionUser?.name||'U').charAt(0).toUpperCase()}</span>}
+              <button onClick={(e)=>{e.stopPropagation();setIsProfileOpen(p=>!p);}} className="flex p-1 rounded-full sm:rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 text-sm font-semibold" style={{background:sessionUser?.image?'transparent':'#e2e8f0'}}>
+                  {sessionUser?.image ? <img src={sessionUser.image} alt="" className="w-8 h-8 rounded-full"/> : <span className="text-slate-600">{(sessionUser?.name||'U').charAt(0).toUpperCase()}</span>}
                 </div>
               </button>
               {isProfileOpen && (
@@ -306,15 +351,15 @@ export default function NotesPage() {
 
       {/* ── CONTENT ── */}
       <div className="max-w-[1500px] mx-auto p-4 md:p-8">
-        
+
         {/* Help bar */}
         <div className={`mb-5 px-4 py-3 ${card} flex items-start gap-3 text-sm`}>
           <Info className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0"/>
-          <div className={muted}>
-            <b className={ttl}>Nasıl kullanılır?</b>
-            {' '}Her satırda banka borçlarını ve aylık ödemeleri yazın. Ay belirtmek için{' '}
-            <code className="bg-slate-100 dark:bg-neutral-800 px-1 rounded text-xs font-mono">nisan, 5.ay, 5.6.ay, mevcut</code>{' '}
-            kullanabilirsiniz. Ayrı segmentleri <code className="bg-slate-100 dark:bg-neutral-800 px-1 rounded text-xs font-mono">/</code> ile ayırın.
+          <div className={`${muted} leading-relaxed`}>
+            <b className={ttl}>Desteklenen formatlar: </b>
+            <span className="font-mono text-xs bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded mx-1">23k kt mevcut / 9k taksit 5.6.Ay</span>
+            <span className="font-mono text-xs bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded mx-1">mart 37k vergi borcu</span>
+            <span className="font-mono text-xs bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded mx-1">mart 35k + 7k = 42k</span>
           </div>
         </div>
 
@@ -332,16 +377,10 @@ export default function NotesPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   {notes.length > 0 && (
-                    <button onClick={()=>setNotes('')}
-                      className={`text-xs ${muted} hover:text-rose-500 transition-colors`}>
-                      Temizle
-                    </button>
+                    <button onClick={()=>setNotes('')} className={`text-xs ${muted} hover:text-rose-500 transition-colors`}>Temizle</button>
                   )}
                   {notes === '' && (
-                    <button
-                      onClick={()=>setNotes(DEMO_NOTES)}
-                      className="text-xs font-medium text-indigo-500 hover:text-indigo-700 transition-colors"
-                    >
+                    <button onClick={()=>setNotes(DEMO_NOTES)} className="text-xs font-medium text-indigo-500 hover:text-indigo-700 transition-colors">
                       ✦ Demo Yükle
                     </button>
                   )}
@@ -351,7 +390,7 @@ export default function NotesPage() {
               <textarea
                 value={notes}
                 onChange={e=>setNotes(e.target.value)}
-                placeholder={`Borç ve ödeme notlarınızı buraya yazın…\n\nÖrnek:\n23 kt mevcut / 9k taksit 5.6.Ay / 7k 7.8.9.ay\n34 ykb mevcut / 29k 5. / 19k 6.ay\n\n65k nisan\n43k mayis`}
+                placeholder={`Borç ve ödeme notlarınızı buraya yazın…\n\nÖrnek:\n23k kt mevcut / 9k taksit 5.6.Ay / 7k 7.8.9.ay\n34k ykb mevcut / 29k 5. / 19k 6.ay\n\nmart 37k vergi, emlak ve ito borcu\nmart 35k kalan + 7k nakit = 42k`}
                 className="w-full resize-none p-5 bg-transparent text-slate-800 dark:text-neutral-200 outline-none leading-relaxed text-sm md:text-[15px] font-mono placeholder:text-slate-300 dark:placeholder:text-neutral-700"
                 rows={12}
                 spellCheck={false}
@@ -371,22 +410,21 @@ export default function NotesPage() {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b border-slate-100 dark:border-neutral-800 text-left">
-                        <th className={`px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted}`}>Ay</th>
+                        <th className={`px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted} w-28`}>Ay</th>
                         <th className={`px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted}`}>Kalem</th>
                         <th className={`px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted}`}>Tutar</th>
-                        <th className={`px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted}`}>Aylık Net</th>
+                        <th className={`px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted} w-36`}>Aylık Net</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedMonths.map(month => {
                         const entries = byMonth[month];
                         const monthTotal = entries.reduce((s,e) => s+(e.type==='income'?e.amount:-e.amount), 0);
-                        const totalStr = `${monthTotal >= 0 ? '+' : '-'}₺${Math.abs(monthTotal).toLocaleString('tr-TR')}`;
                         const isCurrentMonth = month === NOW_MONTH;
 
                         return entries.map((entry, i) => (
                           <tr key={`${month}-${i}`}
-                            className={`border-b border-slate-50 dark:border-neutral-900/40 hover:bg-slate-50/50 dark:hover:bg-neutral-900/30 transition-colors ${isCurrentMonth ? 'bg-amber-50/30 dark:bg-amber-500/5' : ''}`}>
+                            className={`border-b border-slate-50 dark:border-neutral-900/40 hover:bg-slate-50/60 dark:hover:bg-neutral-900/30 transition-colors ${isCurrentMonth ? 'bg-amber-50/20 dark:bg-amber-500/5' : ''}`}>
                             {i === 0 && (
                               <td rowSpan={entries.length} className="px-5 py-3 align-middle">
                                 <div className="flex flex-col items-start gap-1">
@@ -398,7 +436,7 @@ export default function NotesPage() {
                                     {MONTH_LABEL[month] || `Ay ${month}`}
                                   </span>
                                   {isCurrentMonth && (
-                                    <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 ml-0.5">Bu Ay</span>
+                                    <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">● Bu Ay</span>
                                   )}
                                 </div>
                               </td>
@@ -408,7 +446,7 @@ export default function NotesPage() {
                                 {entry.type === 'income'
                                   ? <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>
                                   : <TrendingDown className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
-                                <span className={`text-sm ${ttl} capitalize`}>{entry.label}</span>
+                                <span className={`text-sm ${ttl}`}>{entry.label}</span>
                               </div>
                             </td>
                             <td className="px-5 py-3 text-right">
@@ -418,8 +456,8 @@ export default function NotesPage() {
                             </td>
                             {i === 0 && (
                               <td rowSpan={entries.length} className="px-5 py-3 text-right align-middle">
-                                <span className={`text-sm font-bold tabular-nums ${monthTotal>=0?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
-                                  {totalStr}
+                                <span className={`text-base font-bold tabular-nums ${monthTotal>=0?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
+                                  {monthTotal>=0?'+':'-'}₺{Math.abs(monthTotal).toLocaleString('tr-TR')}
                                 </span>
                               </td>
                             )}
@@ -428,13 +466,13 @@ export default function NotesPage() {
                       })}
                     </tbody>
                     <tfoot>
-                      <tr className="border-t border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900/40">
-                        <td colSpan={2} className={`px-5 py-3 text-sm font-semibold ${ttl}`}>Genel Toplam</td>
-                        <td className="px-5 py-3"></td>
-                        <td className="px-5 py-3 text-right">
+                      <tr className="border-t-2 border-slate-200 dark:border-neutral-700 bg-slate-50/80 dark:bg-neutral-900/50">
+                        <td colSpan={2} className={`px-5 py-3.5 text-sm font-bold ${ttl}`}>Genel Toplam</td>
+                        <td className="px-5 py-3.5"/>
+                        <td className="px-5 py-3.5 text-right">
                           {(() => {
                             const grand = allEntries.reduce((s,e) => s+(e.type==='income'?e.amount:-e.amount),0);
-                            return <span className={`text-sm font-bold tabular-nums ${grand>=0?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
+                            return <span className={`text-base font-bold tabular-nums ${grand>=0?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
                               {grand>=0?'+':'-'}₺{Math.abs(grand).toLocaleString('tr-TR')}
                             </span>;
                           })()}
@@ -446,31 +484,28 @@ export default function NotesPage() {
               </div>
             )}
 
-            {/* Empty state when nothing parsed */}
             {sortedMonths.length === 0 && notes.length > 10 && (
               <div className={`${card} p-6 text-center`}>
                 <p className={`text-sm ${muted}`}>Henüz aylık veri tespit edilemedi.</p>
-                <p className={`text-xs ${muted} mt-1`}>Notunuza ay adı (nisan, mayis...) veya "5.6.Ay" gibi bir ay referansı ekleyin.</p>
+                <p className={`text-xs ${muted} mt-1`}>Ay belirtmek için <code className="bg-slate-100 dark:bg-neutral-800 px-1 rounded">mart 37k</code> veya <code className="bg-slate-100 dark:bg-neutral-800 px-1 rounded">5.6.Ay</code> gibi bir format ekleyin.</p>
               </div>
             )}
           </div>
 
           {/* Right: Calculator */}
-          <div className={`w-full lg:w-[290px] xl:w-[310px] shrink-0`}>
+          <div className="w-full lg:w-[290px] xl:w-[310px] shrink-0 self-start">
             <div className={`${card} overflow-hidden`}>
               <div className="px-5 py-3.5 border-b border-slate-100 dark:border-neutral-800 flex items-center gap-2 bg-slate-50/50 dark:bg-neutral-900/30">
                 <Calculator className="w-4 h-4 text-emerald-500"/>
                 <h2 className={`font-semibold text-sm ${ttl}`}>Hesap Makinesi</h2>
               </div>
               <div className="p-4 flex flex-col gap-3">
-                {/* Display */}
                 <div className="bg-slate-100 dark:bg-[#18181b] rounded-xl px-4 py-3 flex flex-col items-end border border-slate-200 dark:border-neutral-800 min-h-[72px] justify-end">
                   <div className={`text-xs ${muted} h-4 self-start`}>{calcPrev&&calcOp?`${calcPrev} ${calcOp}`:''}</div>
                   <div className={`text-3xl font-bold ${ttl} break-all text-right mt-1`}>
-                    {isNaN(parseFloat(calcInput)) ? '0' : parseFloat(calcInput).toLocaleString('tr-TR', {maximumFractionDigits: 4})}
+                    {isNaN(parseFloat(calcInput))?'0':parseFloat(calcInput).toLocaleString('tr-TR',{maximumFractionDigits:4})}
                   </div>
                 </div>
-                {/* Keypad */}
                 <div className="grid grid-cols-4 gap-1.5">
                   {['C','⌫','%','÷','7','8','9','×','4','5','6','-','1','2','3','+','0','00','.','='].map((btn,i)=>{
                     const isOp=['÷','×','-','+','='].includes(btn);
@@ -480,8 +515,8 @@ export default function NotesPage() {
                       <button key={i} onClick={()=>handleCalcClick(btn)}
                         className={`h-11 font-semibold text-base rounded-lg transition-all active:scale-95 select-none focus:outline-none
                           ${isOp?'bg-indigo-500 hover:bg-indigo-600 text-white shadow-sm':
-                            isClear?'bg-rose-100 text-rose-600 hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/30':
-                            isAction?'bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700':
+                            isClear?'bg-rose-100 text-rose-600 hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-400':
+                            isAction?'bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-neutral-800 dark:text-neutral-300':
                             'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 dark:bg-[#09090b] dark:border-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-900 shadow-sm'}`}>
                         {btn}
                       </button>
