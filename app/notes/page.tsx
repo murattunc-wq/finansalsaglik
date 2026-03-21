@@ -631,9 +631,9 @@ export default function NotesPage() {
                         const isCurrent = month === NOW_MONTH;
                         return monthEntries.map((entry,i) => (
                           <tr key={`${month}-${i}`}
-                          className={`group border-b border-slate-100 dark:border-neutral-800/60 transition-colors ${i===0?'border-t-2 border-t-slate-200 dark:border-t-neutral-700':''}`}>
+                          className={`group border-b border-slate-100 dark:border-neutral-800/60 transition-colors ${isCurrent?'bg-amber-50 dark:bg-[#1f1a0d]':'bg-white dark:bg-[#09090b]'} hover:bg-slate-50 dark:hover:bg-neutral-900/50 ${i===0?'border-t-2 border-t-slate-200 dark:border-t-neutral-700':''}`}>
                             {i===0 && (
-                              <td rowSpan={monthEntries.length} className={`sticky left-0 z-10 px-5 py-3 align-middle transition-colors ${isCurrent?'bg-amber-50/50 dark:bg-amber-500/10':'bg-white dark:bg-[#09090b]'} group-hover:bg-slate-50/60 dark:group-hover:bg-neutral-900/30`}>
+                              <td rowSpan={monthEntries.length} className={`sticky left-0 z-10 px-5 py-3 align-middle bg-inherit`}>
                                 <div className="flex flex-col items-start gap-1 w-16">
                                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${total>=0?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'}`}>
                                     {MONTH_LABEL[month]||`Ay ${month}`}
@@ -642,7 +642,7 @@ export default function NotesPage() {
                                 </div>
                               </td>
                             )}
-                            <td className={`sticky left-28 z-10 px-5 py-3 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] transition-colors ${isCurrent?'bg-amber-50/50 dark:bg-amber-500/10':'bg-white dark:bg-[#09090b]'} group-hover:bg-slate-50/60 dark:group-hover:bg-neutral-900/30`}>
+                            <td className={`sticky left-28 z-10 px-5 py-3 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] bg-inherit`}>
                               <div className="flex items-center gap-2">
                                 {calcType(entry.type)==='income'?<TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>:<TrendingDown className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
                                 <span className={`text-sm ${ttl}`}>{entry.label}</span>

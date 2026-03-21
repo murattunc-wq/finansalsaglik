@@ -1058,8 +1058,10 @@ export default function FinanceDashboard() {
           
           {/* Left: Logo and Search */}
           <div className="flex items-center gap-3 md:gap-4 shrink-0">
-            <Link href="/notes" title="Notlar'a Geçiş Yap" className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-white flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity">
-              <span className="text-white dark:text-black text-sm font-bold">₺</span>
+            <Link href="/notes" title="Notlar'a Geçiş Yap" className="p-2 -ml-2 -mt-2 -mb-2 hover:opacity-90 transition-opacity flex shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center">
+                <span className="text-white dark:text-black text-sm font-bold">₺</span>
+              </div>
             </Link>
             
             {/* Tabs */}
@@ -1779,7 +1781,7 @@ export default function FinanceDashboard() {
                               <MoreVertical className="w-3.5 h-3.5"/>
                             </button>
                             {activeMatrixMenu===item.id && (
-                              <div className="absolute right-0 top-7 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[140px]">
+                              <div className="absolute left-0 top-7 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[140px]">
                                 {item.baseItem?.isReminder && (
                                   <button 
                                     onClick={() => downloadICSFile(item.name, item.baseItem.date || new Date().toISOString(), item.baseItem.amount)}
