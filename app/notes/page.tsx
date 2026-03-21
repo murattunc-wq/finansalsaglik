@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { Moon, Sun, Calculator, FileEdit, Trash2, TrendingDown, TrendingUp, Sparkles, Info } from 'lucide-react';
+import {
+  Moon, Sun, Calculator, FileEdit, Trash2, TrendingDown, TrendingUp,
+  Sparkles, Info, Plus, X, ChevronDown, ChevronUp, Settings2
+} from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 
@@ -18,7 +21,18 @@ function loadLS<T>(key: string, fallback: T): T {
 }
 
 /* ============================================================
-   PARSER
+   TYPES
+   ============================================================ */
+type RuleType = 'income' | 'expense';
+
+interface CustomRule {
+  id: string;
+  keyword: string;  // e.g. "vadeli", "aidat", "kira geliri"
+  type: RuleType;
+}
+
+/* ============================================================
+   PARSER CONSTANTS
    ============================================================ */
 const NOW_MONTH = new Date().getMonth() + 1;
 
@@ -42,9 +56,13 @@ const MONTH_LABEL: Record<number, string> = {
   7:'Temmuz',8:'Ağustos',9:'Eylül',10:'Ekim',11:'Kasım',12:'Aralık'
 };
 
-type ParsedEntry = { month: number; label: string; amount: number; type: 'income'|'expense' };
+// Built-in income keywords
+const BUILTIN_INCOME_KW = ['gelir','getiri','maaş','maas','kira gelir','faiz','nakit gir','vadeli getiri'];
+// Built-in expense keywords (everything else defaults to expense)
 
-/** Parse "9k", "23k", "9.000" → TL amount */
+type ParsedEntry = { month: number; label: string; amount: number; type: RuleType };
+
+/** Parse "9k", "23k" → TL amount */
 function parseAmt(str: string): number | null {
   const s = str.trim().toLowerCase().replace(',','.');
   const kMatch = s.match(/^(\d+(?:\.\d+)?)k$/);
@@ -54,18 +72,14 @@ function parseAmt(str: string): number | null {
   return null;
 }
 
-/** Detect if a word is a month name, returns month number or null */
 function wordToMonth(word: string): number | null {
   const lower = word.toLowerCase().replace(/[^a-zşğıüöç]/gi,'');
   return MONTH_NAME_MAP[lower] ?? null;
 }
 
-/** Extract month numbers from a segment like "5.6.Ay", "7.8.9.ay", "nisan" */
 function findMonths(text: string): number[] {
   const lower = text.toLowerCase();
   const found: number[] = [];
-
-  // Named months first (longest match first to avoid "mar" matching inside "mart" etc.)
   const sortedKeys = Object.keys(MONTH_NAME_MAP).sort((a,b) => b.length - a.length);
   for (const name of sortedKeys) {
     if (lower.includes(name) && !found.includes(MONTH_NAME_MAP[name])) {
@@ -73,11 +87,7 @@ function findMonths(text: string): number[] {
     }
   }
   if (found.length > 0) return found;
-
-  // "mevcut" = current month
   if (/mevcut/.test(lower)) return [NOW_MONTH];
-
-  // Numeric: "5.6.ay", "7.8.9.ay", "5.", "5"
   const numericPattern = /\b(\d+(?:\.\d+)*)\s*\.?\s*(?:ay)?\b/gi;
   let m: RegExpExecArray | null;
   while ((m = numericPattern.exec(lower)) !== null) {
@@ -90,16 +100,20 @@ function findMonths(text: string): number[] {
   return found;
 }
 
-function guessType(text: string): 'income'|'expense' {
+/** Determine income or expense with custom rules taking highest priority */
+function guessType(text: string, customRules: CustomRule[]): RuleType {
   const l = text.toLowerCase();
-  if (/gelir|getiri|maaş|maas|kira\s*gelir|faiz|nakit\s*gir/.test(l)) return 'income';
+  // Custom rules first (longer keywords take priority)
+  const sortedRules = [...customRules].sort((a,b) => b.keyword.length - a.keyword.length);
+  for (const rule of sortedRules) {
+    if (l.includes(rule.keyword.toLowerCase())) return rule.type;
+  }
+  // Built-in income keywords
+  if (BUILTIN_INCOME_KW.some(kw => l.includes(kw))) return 'income';
   return 'expense';
 }
 
-/**
- * Main parser — returns flat list of entries with month, label, amount, type
- */
-function parseNotes(text: string): ParsedEntry[] {
+function parseNotes(text: string, customRules: CustomRule[]): ParsedEntry[] {
   const entries: ParsedEntry[] = [];
   const lines = text.split('\n');
 
@@ -107,22 +121,14 @@ function parseNotes(text: string): ParsedEntry[] {
     const line = rawLine.trim();
     if (!line || line.startsWith('//') || line.startsWith('#')) continue;
 
-    const lower = line.toLowerCase();
-
-    /* ── CASE 1: Calculation line with "=" — treat the result as income
-       Handles: "mart 35k kalan + 7k nakit = 42k" → Mart +42k
-       Handles: "35k + 7k = 42k" → current month +42k
-       Pattern: optional-MONTH anything + anything = RESULT
-    ─────────────────────────────────────────────────────── */
+    /* ── CASE 1: Calculation line with "=" — treat result as income ── */
     if (line.includes('=') && line.includes('+')) {
-      // Extract the result (everything after the last '=')
       const eqIdx = line.lastIndexOf('=');
       const afterEq = line.slice(eqIdx + 1).trim();
       const resultAmtMatch = afterEq.match(/^([\d.,]+k?)/i);
       if (resultAmtMatch) {
         const resultAmt = parseAmt(resultAmtMatch[1]);
         if (resultAmt !== null) {
-          // Try to detect month from the beginning of line
           let month = NOW_MONTH;
           const firstWord = line.split(/\s+/)[0];
           const m = wordToMonth(firstWord);
@@ -133,14 +139,9 @@ function parseNotes(text: string): ParsedEntry[] {
       }
     }
 
-    /* ── CASE 2: Month-prefixed line "MONTHNAME AMOUNT description"
-       e.g. "mart 37k vergi, emlak ve ito borcu"
-       e.g. "💰mart 37k vergi"
-    ─────────────────────────────────────────────────────── */
-    // Strip emoji / symbols
     const cleanLine = line.replace(/[💰🎯✓✗→]/g, '').trim();
-    
-    // Try to match: optional-month AMOUNT rest-of-line (no '/' separator, no 'mevcut')
+
+    /* ── CASE 2: Month-prefixed line "MONTHNAME AMOUNT description" ── */
     const monthPrefixMatch = cleanLine.match(/^([a-zşğıüöçA-ZŞĞIÜÖÇı]+)\s+([\d.,]+k?)\s*(.*)$/i);
     if (monthPrefixMatch) {
       const possibleMonth = wordToMonth(monthPrefixMatch[1]);
@@ -148,21 +149,17 @@ function parseNotes(text: string): ParsedEntry[] {
         const amt = parseAmt(monthPrefixMatch[2]);
         if (amt !== null) {
           const desc = monthPrefixMatch[3].trim() || monthPrefixMatch[1];
-          const type = guessType(desc || cleanLine);
+          const type = guessType(desc + ' ' + cleanLine, customRules);
           entries.push({ month: possibleMonth, label: desc || monthPrefixMatch[1], amount: amt, type });
           continue;
         }
       }
     }
 
-    /* ── CASE 3: Multi-segment line with '/'
-       e.g. "23k kt mevcut / 9k taksit 5.6.Ay / 7k 7.8.9.ay"
-    ─────────────────────────────────────────────────────── */
+    /* ── CASE 3: Multi-segment line with '/' ── */
     if (line.includes('/')) {
       const parts = line.split('/').map(p => p.trim()).filter(Boolean);
       const firstPart = parts[0];
-
-      // Build entity label from the first part
       const entityLabel = firstPart
         .replace(/\d+(?:\.\d+)?k?/gi, '')
         .replace(/mevcut|bakiye/gi, '')
@@ -171,12 +168,9 @@ function parseNotes(text: string): ParsedEntry[] {
 
       for (let i = 0; i < parts.length; i++) {
         const seg = parts[i];
-        // Find amounts
         const amtMatches = seg.match(/\d+(?:\.\d+)?k?/gi) ?? [];
         const amounts = amtMatches.map(t => parseAmt(t)).filter((a): a is number => a !== null);
         if (amounts.length === 0) continue;
-
-        // Find months
         let months: number[] = [];
         if (i === 0 && /mevcut/.test(seg.toLowerCase())) {
           months = [NOW_MONTH];
@@ -184,8 +178,7 @@ function parseNotes(text: string): ParsedEntry[] {
           months = findMonths(seg);
         }
         if (months.length === 0) continue;
-
-        const type = guessType(seg + ' ' + firstPart);
+        const type = guessType(seg + ' ' + firstPart, customRules);
         for (const amt of amounts.slice(0,1)) {
           for (const m of months) {
             entries.push({ month: m, label: entityLabel, amount: amt, type });
@@ -195,24 +188,16 @@ function parseNotes(text: string): ParsedEntry[] {
       continue;
     }
 
-    /* ── CASE 4: Simple "AMOUNT MONTHNAME" or "MONTHNAME AMOUNT"
-       Already covered by CASE 2 — but catch remaining patterns
-       e.g. standalone "65k nisan" (if no month prefix match before)
-    ─────────────────────────────────────────────────────── */
-    // Extract all amounts
+    /* ── CASE 4: Simple "AMOUNT MONTHNAME" fallback ── */
     const amtTokens = (cleanLine.match(/\d+(?:\.\d+)?k?/gi) ?? []).map(t => parseAmt(t)).filter((a): a is number => a !== null);
     const months = findMonths(cleanLine);
     if (amtTokens.length > 0 && months.length > 0) {
-      const restLabel = cleanLine.replace(/\d+(?:\.\d+)?k?/gi, '').replace(/[a-zşğıüöçA-ZŞĞIÜÖÇı]+/g, w => {
-        return wordToMonth(w) ? '' : w;
-      }).trim().replace(/\s+/g, ' ') || 'Not';
-      const type = guessType(cleanLine);
+      const type = guessType(cleanLine, customRules);
       for (const m of months) {
-        entries.push({ month: m, label: restLabel || 'Not', amount: amtTokens[0], type });
+        entries.push({ month: m, label: cleanLine.replace(/\d+(?:\.\d+)?k?/gi,'').replace(/[a-zşğıüöçA-ZŞĞIÜÖÇı]+/g, w => wordToMonth(w)?'':w).trim() || 'Not', amount: amtTokens[0], type });
       }
     }
   }
-
   return entries;
 }
 
@@ -239,20 +224,34 @@ export default function NotesPage() {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [notes, setNotes] = useState<string>(() => loadLS('fcv2_daily_notes', ''));
+  const [customRules, setCustomRules] = useState<CustomRule[]>(() => loadLS('fcv2_notes_rules', []));
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [newKw, setNewKw] = useState('');
+  const [newKwType, setNewKwType] = useState<RuleType>('expense');
 
-  /* ---- Calculator ---- */
+  // Calculator
   const [calcInput, setCalcInput] = useState('0');
   const [calcPrev, setCalcPrev] = useState<string|null>(null);
   const [calcOp, setCalcOp] = useState<string|null>(null);
   const [newNum, setNewNum] = useState(false);
 
-  useEffect(() => {
-    if (mounted) localStorage.setItem('fcv2_daily_notes', JSON.stringify(notes));
-  }, [notes, mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem('fcv2_daily_notes', JSON.stringify(notes)); }, [notes, mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem('fcv2_notes_rules', JSON.stringify(customRules)); }, [customRules, mounted]);
+
+  /* ---- Add / Remove Rule ---- */
+  const addRule = () => {
+    const kw = newKw.trim().toLowerCase();
+    if (!kw) return;
+    if (customRules.some(r => r.keyword === kw)) return;
+    const rule: CustomRule = { id: Date.now().toString(), keyword: kw, type: newKwType };
+    setCustomRules(prev => [...prev, rule]);
+    setNewKw('');
+  };
+
+  const removeRule = (id: string) => setCustomRules(prev => prev.filter(r => r.id !== id));
 
   /* ---- Parse ---- */
-  const allEntries = useMemo(() => parseNotes(notes), [notes]);
-
+  const allEntries = useMemo(() => parseNotes(notes, customRules), [notes, customRules]);
   const byMonth = useMemo(() => {
     const map: Record<number, ParsedEntry[]> = {};
     for (const e of allEntries) {
@@ -261,7 +260,6 @@ export default function NotesPage() {
     }
     return map;
   }, [allEntries]);
-
   const sortedMonths = Object.keys(byMonth).map(Number).sort((a,b) => a-b);
 
   /* ---- Calculator ---- */
@@ -276,7 +274,6 @@ export default function NotesPage() {
       default: return B;
     }
   };
-
   const handleCalcClick = (val: string) => {
     if (/[0-9.]/.test(val)) {
       if (newNum) { setCalcInput(val); setNewNum(false); }
@@ -333,7 +330,7 @@ export default function NotesPage() {
             <div className="relative">
               <button onClick={(e)=>{e.stopPropagation();setIsProfileOpen(p=>!p);}} className="flex p-1 rounded-full sm:rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 text-sm font-semibold" style={{background:sessionUser?.image?'transparent':'#e2e8f0'}}>
-                  {sessionUser?.image ? <img src={sessionUser.image} alt="" className="w-8 h-8 rounded-full"/> : <span className="text-slate-600">{(sessionUser?.name||'U').charAt(0).toUpperCase()}</span>}
+                  {sessionUser?.image?<img src={sessionUser.image} alt="" className="w-8 h-8 rounded-full"/>:<span className="text-slate-600">{(sessionUser?.name||'U').charAt(0).toUpperCase()}</span>}
                 </div>
               </button>
               {isProfileOpen && (
@@ -354,21 +351,9 @@ export default function NotesPage() {
 
       {/* ── CONTENT ── */}
       <div className="max-w-[1500px] mx-auto p-4 md:p-8">
-
-        {/* Help bar */}
-        <div className={`mb-5 px-4 py-3 ${card} flex items-start gap-3 text-sm`}>
-          <Info className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0"/>
-          <div className={`${muted} leading-relaxed`}>
-            <b className={ttl}>Desteklenen formatlar: </b>
-            <span className="font-mono text-xs bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded mx-1">23k kt mevcut / 9k taksit 5.6.Ay</span>
-            <span className="font-mono text-xs bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded mx-1">mart 37k vergi borcu</span>
-            <span className="font-mono text-xs bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded mx-1">mart 35k + 7k = 42k</span>
-          </div>
-        </div>
-
         <div className="flex flex-col lg:flex-row gap-6">
 
-          {/* Left: Notepad + Breakdown */}
+          {/* ── LEFT COLUMN ── */}
           <div className="flex-1 flex flex-col gap-5 min-w-0">
 
             {/* Notepad */}
@@ -379,25 +364,130 @@ export default function NotesPage() {
                   <h2 className={`font-semibold text-sm ${ttl}`}>Hesaplama Defteri</h2>
                 </div>
                 <div className="flex items-center gap-3">
-                  {notes.length > 0 && (
-                    <button onClick={()=>setNotes('')} className={`text-xs ${muted} hover:text-rose-500 transition-colors`}>Temizle</button>
-                  )}
-                  {notes === '' && (
-                    <button onClick={()=>setNotes(DEMO_NOTES)} className="text-xs font-medium text-indigo-500 hover:text-indigo-700 transition-colors">
-                      ✦ Demo Yükle
-                    </button>
-                  )}
+                  {notes.length > 0 && <button onClick={()=>setNotes('')} className={`text-xs ${muted} hover:text-rose-500 transition-colors`}>Temizle</button>}
+                  {notes==='' && <button onClick={()=>setNotes(DEMO_NOTES)} className="text-xs font-medium text-indigo-500 hover:text-indigo-700">✦ Demo Yükle</button>}
                   <span className={`text-xs ${muted}`}>Otomatik Kaydedilir</span>
                 </div>
               </div>
               <textarea
                 value={notes}
                 onChange={e=>setNotes(e.target.value)}
-                placeholder={`Borç ve ödeme notlarınızı buraya yazın…\n\nÖrnek:\n23k kt mevcut / 9k taksit 5.6.Ay / 7k 7.8.9.ay\n34k ykb mevcut / 29k 5. / 19k 6.ay\n\nmart 37k vergi, emlak ve ito borcu\nmart 35k kalan + 7k nakit = 42k`}
+                placeholder={`Notlarınızı yazın…\n\nÖrnek:\n23k kt mevcut / 9k taksit 5.6.Ay / 7k 7.8.9.ay\nmart 37k vergi borcu\nmart 35k kalan + 7k nakit = 42k`}
                 className="w-full resize-none p-5 bg-transparent text-slate-800 dark:text-neutral-200 outline-none leading-relaxed text-sm md:text-[15px] font-mono placeholder:text-slate-300 dark:placeholder:text-neutral-700"
                 rows={12}
                 spellCheck={false}
               />
+            </div>
+
+            {/* ── FORMAT RULES PANEL ── */}
+            <div className={`${card} overflow-hidden`}>
+              <button
+                onClick={() => setRulesOpen(p => !p)}
+                className="w-full px-5 py-3.5 flex items-center justify-between border-b border-slate-100 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-900/30 hover:bg-slate-100/50 dark:hover:bg-neutral-800/30 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Settings2 className="w-4 h-4 text-slate-500 dark:text-neutral-400"/>
+                  <span className={`font-semibold text-sm ${ttl}`}>Format Kuralları</span>
+                  {customRules.length > 0 && (
+                    <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 px-2 py-0.5 rounded-full">
+                      {customRules.length} kural
+                    </span>
+                  )}
+                </div>
+                {rulesOpen ? <ChevronUp className="w-4 h-4 text-slate-400"/> : <ChevronDown className="w-4 h-4 text-slate-400"/>}
+              </button>
+
+              {rulesOpen && (
+                <div className="p-5 flex flex-col gap-4">
+                  {/* Info */}
+                  <div className="flex items-start gap-2.5 p-3 bg-slate-50 dark:bg-neutral-900 rounded-lg border border-slate-200 dark:border-neutral-800">
+                    <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"/>
+                    <p className={`text-xs ${muted} leading-relaxed`}>
+                      Anahtar kelime ekleyerek notlarınızdaki kelimelerin <b className="text-slate-700 dark:text-neutral-300">gelir mi gider mi</b> olduğunu tanımlayın.
+                      Özel kurallar yerleşik kurallara göre önceliklidir.
+                      Örnek: <code className="bg-slate-200 dark:bg-neutral-800 px-1 rounded font-mono">vadeli</code> → Gelir,{' '}
+                      <code className="bg-slate-200 dark:bg-neutral-800 px-1 rounded font-mono">aidat</code> → Gider
+                    </p>
+                  </div>
+
+                  {/* Add new rule */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="anahtar kelime..."
+                      value={newKw}
+                      onChange={e => setNewKw(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addRule()}
+                      className={`flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#18181b] ${ttl} focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-600 transition-colors`}
+                    />
+                    <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-neutral-800 shrink-0">
+                      <button
+                        onClick={() => setNewKwType('income')}
+                        className={`px-3 py-2 text-xs font-semibold transition-colors ${newKwType==='income' ? 'bg-emerald-500 text-white' : `bg-white dark:bg-[#18181b] ${muted} hover:bg-slate-50 dark:hover:bg-neutral-800`}`}
+                      >
+                        Gelir
+                      </button>
+                      <button
+                        onClick={() => setNewKwType('expense')}
+                        className={`px-3 py-2 text-xs font-semibold transition-colors border-l border-slate-200 dark:border-neutral-800 ${newKwType==='expense' ? 'bg-rose-500 text-white' : `bg-white dark:bg-[#18181b] ${muted} hover:bg-slate-50 dark:hover:bg-neutral-800`}`}
+                      >
+                        Gider
+                      </button>
+                    </div>
+                    <button
+                      onClick={addRule}
+                      disabled={!newKw.trim()}
+                      className="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                    >
+                      <Plus className="w-4 h-4"/>
+                    </button>
+                  </div>
+
+                  {/* Existing rules */}
+                  {customRules.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {customRules.map(rule => (
+                        <div key={rule.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-neutral-900 border border-slate-100 dark:border-neutral-800 group">
+                          <div className="flex items-center gap-3">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${rule.type==='income' ? 'bg-emerald-500' : 'bg-rose-500'}`}/>
+                            <span className={`text-sm font-medium ${ttl} font-mono`}>{rule.keyword}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              rule.type==='income'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                : 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'
+                            }`}>
+                              {rule.type==='income' ? 'Gelir' : 'Gider'}
+                            </span>
+                            <button
+                              onClick={() => removeRule(rule.id)}
+                              className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-500`}
+                            >
+                              <X className="w-3.5 h-3.5"/>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={`text-xs ${muted} text-center py-3`}>Henüz özel kural eklenmedi</p>
+                  )}
+
+                  {/* Built-in keywords reference */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-neutral-800">
+                    <p className={`text-xs font-medium ${muted} mb-2`}>Yerleşik gelir anahtar kelimeleri:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {BUILTIN_INCOME_KW.map(kw => (
+                        <span key={kw} className="text-[11px] font-mono bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded">
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                    <p className={`text-xs ${muted} mt-2`}>Diğer tüm kelimeler varsayılan olarak gider sayılır.</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Monthly Breakdown */}
@@ -408,7 +498,6 @@ export default function NotesPage() {
                   <h2 className={`font-semibold text-sm ${ttl}`}>Aylık Borç / Ödeme Özeti</h2>
                   <span className={`ml-auto text-xs ${muted}`}>{sortedMonths.length} ay tespit edildi</span>
                 </div>
-
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
@@ -424,31 +513,21 @@ export default function NotesPage() {
                         const entries = byMonth[month];
                         const monthTotal = entries.reduce((s,e) => s+(e.type==='income'?e.amount:-e.amount), 0);
                         const isCurrentMonth = month === NOW_MONTH;
-
                         return entries.map((entry, i) => (
-                          <tr key={`${month}-${i}`}
-                            className={`border-b border-slate-50 dark:border-neutral-900/40 hover:bg-slate-50/60 dark:hover:bg-neutral-900/30 transition-colors ${isCurrentMonth ? 'bg-amber-50/20 dark:bg-amber-500/5' : ''}`}>
+                          <tr key={`${month}-${i}`} className={`border-b border-slate-50 dark:border-neutral-900/40 hover:bg-slate-50/60 dark:hover:bg-neutral-900/30 transition-colors ${isCurrentMonth?'bg-amber-50/20 dark:bg-amber-500/5':''}`}>
                             {i === 0 && (
                               <td rowSpan={entries.length} className="px-5 py-3 align-middle">
                                 <div className="flex flex-col items-start gap-1">
-                                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${
-                                    monthTotal >= 0
-                                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-                                      : 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'
-                                  }`}>
-                                    {MONTH_LABEL[month] || `Ay ${month}`}
+                                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${monthTotal>=0?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'}`}>
+                                    {MONTH_LABEL[month]||`Ay ${month}`}
                                   </span>
-                                  {isCurrentMonth && (
-                                    <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">● Bu Ay</span>
-                                  )}
+                                  {isCurrentMonth && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">● Bu Ay</span>}
                                 </div>
                               </td>
                             )}
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-2">
-                                {entry.type === 'income'
-                                  ? <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>
-                                  : <TrendingDown className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
+                                {entry.type==='income'?<TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>:<TrendingDown className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
                                 <span className={`text-sm ${ttl}`}>{entry.label}</span>
                               </div>
                             </td>
@@ -495,7 +574,7 @@ export default function NotesPage() {
             )}
           </div>
 
-          {/* Right: Calculator */}
+          {/* ── RIGHT COLUMN: Calculator ── */}
           <div className="w-full lg:w-[290px] xl:w-[310px] shrink-0 self-start">
             <div className={`${card} overflow-hidden`}>
               <div className="px-5 py-3.5 border-b border-slate-100 dark:border-neutral-800 flex items-center gap-2 bg-slate-50/50 dark:bg-neutral-900/30">
