@@ -1713,7 +1713,7 @@ export default function FinanceDashboard() {
                     onDrop={(e) => { if(!item.isSystemRow) handleDrop(e, item.id); }}
                     className={`${item.isSystemRow ? 'bg-slate-50 dark:bg-neutral-900/40 border-t-2 border-slate-200 dark:border-neutral-800' : 'hover:bg-slate-50/60 dark:hover:bg-neutral-900/30'} transition-colors group ${!item.isSystemRow ? 'cursor-grab active:cursor-grabbing' : ''} ${draggedId === item.id ? 'opacity-50 grayscale bg-slate-100 dark:bg-neutral-800' : ''}`}
                   >
-                    <td className={`sticky left-0 z-10 ${item.isSystemRow ? 'bg-slate-50 dark:bg-neutral-900/40' : 'bg-white dark:bg-[#09090b]'} px-5 py-4 font-medium ${item.isSystemRow ? 'text-slate-900 dark:text-white font-bold' : title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] ${!item.isSystemRow ? 'group-hover:bg-slate-50/60 dark:group-hover:bg-neutral-900/30' : ''} transition-colors`}>
+                    <td className={`sticky left-0 ${activeMatrixMenu === item.id ? 'z-30' : 'z-10'} ${item.isSystemRow ? 'bg-slate-50 dark:bg-neutral-900/40' : 'bg-white dark:bg-[#09090b]'} px-5 py-4 font-medium ${item.isSystemRow ? 'text-slate-900 dark:text-white font-bold' : title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] ${!item.isSystemRow ? 'group-hover:bg-slate-50/60 dark:group-hover:bg-neutral-900/30' : ''} transition-colors`}>
                       <div className="flex items-center gap-2 group/name">
                         {item.baseItem?.isReminder 
                           ? <Bell className="w-3.5 h-3.5 text-amber-500 shrink-0"/>
