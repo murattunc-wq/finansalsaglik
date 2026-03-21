@@ -109,25 +109,28 @@ function parseNotes(text: string): ParsedEntry[] {
 
     const lower = line.toLowerCase();
 
-    /* ── CASE 1: Calculation line "MONTH? X + Y = Z"
-       Treats the RESULT (Z) as income for that month.
-       e.g. "mart 35kalan + 7k nakit = 42k" → Mart +42k income
+    /* ── CASE 1: Calculation line with "=" — treat the result as income
+       Handles: "mart 35k kalan + 7k nakit = 42k" → Mart +42k
+       Handles: "35k + 7k = 42k" → current month +42k
+       Pattern: optional-MONTH anything + anything = RESULT
     ─────────────────────────────────────────────────────── */
-    const calcMatch = line.match(/^([a-zşğıüöçA-ZŞĞIÜÖÇı]+\s+)?[\d.,]+k?\s*\+\s*[\d.,]+k?\s*=\s*([\d.,]+k?)/i);
-    if (calcMatch) {
-      const resultStr = calcMatch[2];
-      const resultAmt = parseAmt(resultStr.trim());
-      if (resultAmt !== null) {
-        // Detect month prefix
-        let month = NOW_MONTH;
-        if (calcMatch[1]) {
-          const m = wordToMonth(calcMatch[1].trim());
+    if (line.includes('=') && line.includes('+')) {
+      // Extract the result (everything after the last '=')
+      const eqIdx = line.lastIndexOf('=');
+      const afterEq = line.slice(eqIdx + 1).trim();
+      const resultAmtMatch = afterEq.match(/^([\d.,]+k?)/i);
+      if (resultAmtMatch) {
+        const resultAmt = parseAmt(resultAmtMatch[1]);
+        if (resultAmt !== null) {
+          // Try to detect month from the beginning of line
+          let month = NOW_MONTH;
+          const firstWord = line.split(/\s+/)[0];
+          const m = wordToMonth(firstWord);
           if (m) month = m;
+          entries.push({ month, label: 'Nakit / Mevcut', amount: resultAmt, type: 'income' });
+          continue;
         }
-        const label = 'Nakit / Mevcut';
-        entries.push({ month, label, amount: resultAmt, type: 'income' });
       }
-      continue;
     }
 
     /* ── CASE 2: Month-prefixed line "MONTHNAME AMOUNT description"
