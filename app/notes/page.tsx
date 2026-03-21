@@ -520,7 +520,7 @@ export default function NotesPage() {
                         const isCurrent = month === NOW_MONTH;
                         return monthEntries.map((entry,i) => (
                           <tr key={`${month}-${i}`}
-                            className={`border-b border-slate-50 dark:border-neutral-900/40 hover:bg-slate-50/60 dark:hover:bg-neutral-900/30 transition-colors ${isCurrent?'bg-amber-50/20 dark:bg-amber-500/5':''}`}>
+                          className={`border-b border-slate-100 dark:border-neutral-800/60 hover:bg-slate-50/60 dark:hover:bg-neutral-900/30 transition-colors ${isCurrent?'bg-amber-50/20 dark:bg-amber-500/5':''} ${i===0?'border-t-2 border-t-slate-200 dark:border-t-neutral-700':''}`}>
                             {i===0 && (
                               <td rowSpan={monthEntries.length} className="px-5 py-3 align-middle">
                                 <div className="flex flex-col items-start gap-1">
