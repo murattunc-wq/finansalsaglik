@@ -66,6 +66,17 @@ function loadLS<T>(key: string, fallback: T): T {
   }
 }
 
+function getGoogleCalendarUrl(title: string, dateIsoString: string, amount?: number) {
+  const d = new Date(dateIsoString);
+  const start = d.toISOString().replace(/-|:|\.\d\d\d/g, '').substring(0, 8);
+  const next = new Date(d);
+  next.setDate(next.getDate() + 1);
+  const end = next.toISOString().replace(/-|:|\.\d\d\d/g, '').substring(0, 8);
+  const text = encodeURIComponent(title);
+  const details = encodeURIComponent(`Tutar: ${amount ? amount.toLocaleString('tr-TR') + ' TL' : 'Belirtilmedi'}\nFinansal Kokpit üzerinden eklenmiştir.`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start}/${end}&details=${details}`;
+}
+
 /* ============================================================
    COMPONENT
    ============================================================ */
@@ -1002,16 +1013,16 @@ export default function FinanceDashboard() {
           
           {/* Left: Logo and Search */}
           <div className="flex items-center gap-3 md:gap-4 shrink-0">
-            <Link href="/" className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity">
+            <Link href="/notes" title="Notlar'a Geçiş Yap" className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity">
               <span className="text-white dark:text-black text-sm font-bold">₺</span>
             </Link>
             
             {/* Tabs */}
-            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0">
-               <Link href="/" className="px-2 sm:px-3 py-1.5 text-[11px] sm:text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">
+            <div className="hidden sm:flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg">
+               <Link href="/" className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">
                  Kokpit
                </Link>
-               <Link href="/notes" className="px-2 sm:px-3 py-1.5 text-[11px] sm:text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">
+               <Link href="/notes" className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">
                  Notlarım
                </Link>
             </div>
@@ -1623,6 +1634,16 @@ export default function FinanceDashboard() {
                         </button>
                         {activeTxnMenu===item.id && (
                           <div className="absolute right-0 top-7 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[160px]">
+                            {item.type === 'reminder' && (
+                              <a 
+                                href={getGoogleCalendarUrl(item.name, (item as any).rawDate || new Date().toISOString(), item.amount)} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="px-4 py-2.5 text-xs text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2 w-full font-medium border-b border-slate-100 dark:border-neutral-800"
+                              >
+                                <CalendarDays className="w-3.5 h-3.5"/> Takvime Ekle
+                              </a>
+                            )}
                             {!item.isPaid && (
                               <button onClick={()=>{handleMarkPaid(item.id, item.type === 'reminder');}} className="px-4 py-2.5 text-xs text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2 w-full font-medium">
                                 <FileText className="w-3.5 h-3.5"/> Ödendi İşaretle
@@ -1715,6 +1736,16 @@ export default function FinanceDashboard() {
                             </button>
                             {activeMatrixMenu===item.id && (
                               <div className="absolute left-6 top-0 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[140px]">
+                                {item.baseItem?.isReminder && (
+                                  <a 
+                                    href={getGoogleCalendarUrl(item.name, item.baseItem.date || new Date().toISOString(), item.baseItem.amount)} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="px-3 py-2 text-xs text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2 w-full font-medium border-b border-slate-100 dark:border-neutral-800 whitespace-nowrap"
+                                  >
+                                    <CalendarDays className="w-3.5 h-3.5"/> Takvime Ekle
+                                  </a>
+                                )}
                                 <button onClick={()=>handleOrderChange(item.id, 'up')} className="px-3 py-2 text-xs text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 flex items-center w-full font-medium whitespace-nowrap">
                                   <span>↑ Yukarı Taşı</span>
                                 </button>
