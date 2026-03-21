@@ -22,7 +22,7 @@ import TransactionModal, { TransactionPayload } from '@/components/TransactionMo
 /* ============================================================
    TYPES
    ============================================================ */
-type RecurringItem = { id: string; type: 'income'|'expense'; category: string; name: string; amount: number; color: string; order?: number; dueDay?: number; date?: string; repeatUntil?: string; isReminder?: boolean; };
+type RecurringItem = { id: string; type: 'income'|'expense'; category: string; name: string; amount: number; color: string; order?: number; dueDay?: number; date?: string; repeatUntil?: string; isReminder?: boolean; isPaused?: boolean; };
 
 export type ReminderItem = {
   id: string;
@@ -66,15 +66,35 @@ function loadLS<T>(key: string, fallback: T): T {
   }
 }
 
-function getGoogleCalendarUrl(title: string, dateIsoString: string, amount?: number) {
+function downloadICSFile(title: string, dateIsoString: string, amount?: number) {
   const d = new Date(dateIsoString);
-  const start = d.toISOString().replace(/-|:|\.\d\d\d/g, '').substring(0, 8);
-  const next = new Date(d);
-  next.setDate(next.getDate() + 1);
-  const end = next.toISOString().replace(/-|:|\.\d\d\d/g, '').substring(0, 8);
-  const text = encodeURIComponent(title);
-  const details = encodeURIComponent(`Tutar: ${amount ? amount.toLocaleString('tr-TR') + ' TL' : 'Belirtilmedi'}\nFinansal Kokpit üzerinden eklenmiştir.`);
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start}/${end}&details=${details}`;
+  const startDay = d.toISOString().replace(/-|:|\.\d\d\d/g, '').substring(0, 8);
+  const nextDay = new Date(d);
+  nextDay.setDate(nextDay.getDate() + 1);
+  const endDay = nextDay.toISOString().replace(/-|:|\.\d\d\d/g, '').substring(0, 8);
+  
+  const amtStr = amount ? amount.toLocaleString('tr-TR') + ' TL' : 'Belirtilmedi';
+  
+  const icsTxt = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Finansal Kokpit//TR
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:${startDay}
+DTEND;VALUE=DATE:${endDay}
+SUMMARY:${title}
+DESCRIPTION:Tutar: ${amtStr}\\nFinansal Kokpit üzerinden eklenmiştir.
+END:VEVENT
+END:VCALENDAR`;
+
+  const blob = new Blob([icsTxt], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Hatirlatici-${title.replace(/[^a-zA-Z0-9_-]/g,'')}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /* ============================================================
@@ -249,9 +269,9 @@ export default function FinanceDashboard() {
      HANDLERS
      ============================================================ */
   const handleTransactionSave = (payload: TransactionPayload) => {
-    let calUrl = '';
+    let shouldDownloadIcs = false;
     if (payload.isReminder) {
-      calUrl = getGoogleCalendarUrl(payload.description, payload.date || new Date().toISOString(), payload.amount);
+      shouldDownloadIcs = true;
     }
 
     if (payload.isReminder && !payload.isRecurring) {
@@ -285,8 +305,8 @@ export default function FinanceDashboard() {
     }
     
     // Auto-open calendar link if it's a reminder
-    if (calUrl) {
-      window.open(calUrl, '_blank');
+    if (shouldDownloadIcs) {
+      downloadICSFile(payload.description, payload.date || new Date().toISOString(), payload.amount);
     }
     
     setIsModalOpen(false);
@@ -301,8 +321,17 @@ export default function FinanceDashboard() {
       if (editingCell.isRecurring) {
         if (val >= 0) {
           const rawId = editingCell.itemId.startsWith('rec-') ? editingCell.itemId.replace('rec-', '') : editingCell.itemId;
-          const projId = `proj-${rawId}-${format(mDate, 'yyyy-MM')}`;
-          setOverrides(prev => ({ ...prev, [projId]: val }));
+          
+          setOverrides(prev => {
+            const next = { ...prev };
+            // Cascade to all future months!
+            for (let i = editingCell.monthIdx; i < engineData.matrixColumns.length; i++) {
+              const futureDate = parse(engineData.matrixColumns[i], 'MMM yy', new Date(), { locale: tr });
+              const projId = `proj-${rawId}-${format(futureDate, 'yyyy-MM')}`;
+              next[projId] = val;
+            }
+            return next;
+          });
         }
       } else {
         const targetMonthStart = startOfMonth(mDate);
@@ -356,6 +385,11 @@ export default function FinanceDashboard() {
   const handleRecurringDelete = (id: string) => {
     setRecurring(prev => prev.filter(r => r.id !== id));
     setActiveTxnMenu(null);
+  };
+
+  const handleTogglePause = (id: string, currentlyPaused: boolean) => {
+    setRecurring(prev => prev.map(r => r.id === id ? { ...r, isPaused: !currentlyPaused } : r));
+    setActiveMatrixMenu(null);
   };
 
   const handleRuleNameSave = () => {
@@ -722,7 +756,7 @@ export default function FinanceDashboard() {
         const recEnd = rec.repeatUntil ? startOfMonth(parseISO(rec.repeatUntil)) : new Date(2050, 0, 1);
         const outOfBounds = currentD < recStart || currentD > recEnd;
         const effectivelyOutOfBounds = outOfBounds && !hasOverride;
-        const mappedAmt = (isHidden || effectivelyOutOfBounds) ? 0 : amt;
+        const mappedAmt = (isHidden || effectivelyOutOfBounds || rec.isPaused) ? 0 : amt;
         
         if (!matrixRowsMap.has(`rec-${rec.id}`)) {
           matrixRowsMap.set(`rec-${rec.id}`, { id: `rec-${rec.id}`, name: rec.name, type: rec.type, isRecurring: true, baseItem: rec, cells: {} });
@@ -1024,7 +1058,7 @@ export default function FinanceDashboard() {
           
           {/* Left: Logo and Search */}
           <div className="flex items-center gap-3 md:gap-4 shrink-0">
-            <Link href="/notes" title="Notlar'a Geçiş Yap" className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity">
+            <Link href="/notes" title="Notlar'a Geçiş Yap" className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-white flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity">
               <span className="text-white dark:text-black text-sm font-bold">₺</span>
             </Link>
             
@@ -1646,14 +1680,12 @@ export default function FinanceDashboard() {
                         {activeTxnMenu===item.id && (
                           <div className="absolute right-0 top-7 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[160px]">
                             {item.type === 'reminder' && (
-                              <a 
-                                href={getGoogleCalendarUrl(item.name, (item as any).rawDate || new Date().toISOString(), item.amount)} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
+                              <button 
+                                onClick={() => downloadICSFile(item.name, (item as any).rawDate || new Date().toISOString(), item.amount)}
                                 className="px-4 py-2.5 text-xs text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2 w-full font-medium border-b border-slate-100 dark:border-neutral-800"
                               >
                                 <CalendarDays className="w-3.5 h-3.5"/> Takvime Ekle
-                              </a>
+                              </button>
                             )}
                             {!item.isPaid && (
                               <button onClick={()=>{handleMarkPaid(item.id, item.type === 'reminder');}} className="px-4 py-2.5 text-xs text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2 w-full font-medium">
@@ -1732,10 +1764,11 @@ export default function FinanceDashboard() {
                         ) : (
                           <span 
                             onClick={()=>{if(item.isRecurring){setEditingRuleId(item.baseItem.id);setRuleNameValue(item.name);}}} 
-                            className={`transition-colors truncate block ${item.isRecurring ? 'cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400' : ''}`}
+                            className={`transition-colors truncate block ${item.isRecurring ? 'cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400' : ''} ${item.baseItem?.isPaused ? 'opacity-40 line-through' : ''}`}
                           >
                             {item.name} 
-                            {item.baseItem?.isReminder && <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded ml-1.5 font-bold uppercase overflow-hidden">Hatırlatıcı</span>}
+                            {item.baseItem?.isReminder && <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded ml-1.5 font-bold uppercase overflow-hidden no-underline inline-block">Hatırlatıcı</span>}
+                            {item.baseItem?.isPaused && <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded ml-1.5 font-bold uppercase overflow-hidden no-underline inline-block">Pasif</span>}
                           </span>
                         )}
 
@@ -1748,14 +1781,12 @@ export default function FinanceDashboard() {
                             {activeMatrixMenu===item.id && (
                               <div className="absolute right-0 top-7 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[140px]">
                                 {item.baseItem?.isReminder && (
-                                  <a 
-                                    href={getGoogleCalendarUrl(item.name, item.baseItem.date || new Date().toISOString(), item.baseItem.amount)} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
+                                  <button 
+                                    onClick={() => downloadICSFile(item.name, item.baseItem.date || new Date().toISOString(), item.baseItem.amount)}
                                     className="px-3 py-2 text-xs text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2 w-full font-medium border-b border-slate-100 dark:border-neutral-800 whitespace-nowrap"
                                   >
                                     <CalendarDays className="w-3.5 h-3.5"/> Takvime Ekle
-                                  </a>
+                                  </button>
                                 )}
                                 <button onClick={()=>handleOrderChange(item.id, 'up')} className="px-3 py-2 text-xs text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 flex items-center w-full font-medium whitespace-nowrap">
                                   <span>↑ Yukarı Taşı</span>
@@ -1763,6 +1794,12 @@ export default function FinanceDashboard() {
                                 <button onClick={()=>handleOrderChange(item.id, 'down')} className="px-3 py-2 text-xs text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 flex items-center w-full font-medium whitespace-nowrap border-b border-slate-100 dark:border-neutral-800">
                                   <span>↓ Aşağı Taşı</span>
                                 </button>
+                                {item.isRecurring && (
+                                  <button onClick={()=>handleTogglePause(item.baseItem.id, !!item.baseItem.isPaused)} className="px-3 py-2 text-xs text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 flex items-center w-full font-medium whitespace-nowrap border-b border-slate-100 dark:border-neutral-800">
+                                    {item.baseItem.isPaused ? <Eye className="w-3.5 h-3.5 mr-2"/> : <EyeOff className="w-3.5 h-3.5 mr-2"/>}
+                                    <span>{item.baseItem.isPaused ? 'Aktif Yap' : 'Pasif Yap'}</span>
+                                  </button>
+                                )}
                                 {item.isRecurring ? (
                                   <button onClick={()=>handleRecurringDelete(item.baseItem.id)} className="px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 w-full font-medium whitespace-nowrap">
                                     <Trash2 className="w-3.5 h-3.5"/> Sil

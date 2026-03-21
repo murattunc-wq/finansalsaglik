@@ -464,7 +464,7 @@ export default function NotesPage() {
       <div className={`${navBg} sticky top-0 z-40`}>
         <div className="max-w-[1500px] mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 shrink-0">
-            <Link href="/" title="Kokpit'e Geçiş Yap" className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity">
+            <Link href="/" title="Kokpit'e Geçiş Yap" className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-white flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity">
               <span className="text-white dark:text-black text-sm font-bold">₺</span>
             </Link>
             <div className="hidden sm:flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg">
@@ -618,10 +618,10 @@ export default function NotesPage() {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b border-slate-100 dark:border-neutral-800 text-left">
-                        <th className={`px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted} w-28`}>Ay</th>
-                        <th className={`px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted}`}>Kalem</th>
-                        <th className={`px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted}`}>Tutar</th>
-                        <th className={`px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted} w-36`}>Aylık Net</th>
+                        <th className={`sticky left-0 z-20 bg-white dark:bg-[#09090b] px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted} w-28`}>Ay</th>
+                        <th className={`sticky left-28 z-20 bg-white dark:bg-[#09090b] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted}`}>Kalem</th>
+                        <th className={`px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted} min-w-[120px]`}>Tutar</th>
+                        <th className={`px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted} min-w-[120px]`}>Aylık Net</th>
                       </tr>
                     </thead>
                     <tbody className={privacyClass}>
@@ -631,10 +631,10 @@ export default function NotesPage() {
                         const isCurrent = month === NOW_MONTH;
                         return monthEntries.map((entry,i) => (
                           <tr key={`${month}-${i}`}
-                          className={`border-b border-slate-100 dark:border-neutral-800/60 hover:bg-slate-50/60 dark:hover:bg-neutral-900/30 transition-colors ${isCurrent?'bg-amber-50/20 dark:bg-amber-500/5':''} ${i===0?'border-t-2 border-t-slate-200 dark:border-t-neutral-700':''}`}>
+                          className={`group border-b border-slate-100 dark:border-neutral-800/60 transition-colors ${i===0?'border-t-2 border-t-slate-200 dark:border-t-neutral-700':''}`}>
                             {i===0 && (
-                              <td rowSpan={monthEntries.length} className="px-5 py-3 align-middle">
-                                <div className="flex flex-col items-start gap-1">
+                              <td rowSpan={monthEntries.length} className={`sticky left-0 z-10 px-5 py-3 align-middle transition-colors ${isCurrent?'bg-amber-50/50 dark:bg-amber-500/10':'bg-white dark:bg-[#09090b]'} group-hover:bg-slate-50/60 dark:group-hover:bg-neutral-900/30`}>
+                                <div className="flex flex-col items-start gap-1 w-16">
                                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${total>=0?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'}`}>
                                     {MONTH_LABEL[month]||`Ay ${month}`}
                                   </span>
@@ -642,7 +642,7 @@ export default function NotesPage() {
                                 </div>
                               </td>
                             )}
-                            <td className="px-5 py-3">
+                            <td className={`sticky left-28 z-10 px-5 py-3 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] transition-colors ${isCurrent?'bg-amber-50/50 dark:bg-amber-500/10':'bg-white dark:bg-[#09090b]'} group-hover:bg-slate-50/60 dark:group-hover:bg-neutral-900/30`}>
                               <div className="flex items-center gap-2">
                                 {calcType(entry.type)==='income'?<TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>:<TrendingDown className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
                                 <span className={`text-sm ${ttl}`}>{entry.label}</span>
@@ -670,10 +670,10 @@ export default function NotesPage() {
                       })}
                     </tbody>
                     <tfoot className={privacyClass}>
-                      <tr className="border-t-2 border-slate-200 dark:border-neutral-700 bg-slate-50/80 dark:bg-neutral-900/50">
-                        <td colSpan={2} className={`px-5 py-3.5 text-sm font-bold ${ttl}`}>Genel Toplam</td>
-                        <td className="px-5 py-3.5"/>
-                        <td className="px-5 py-3.5 text-right">
+                      <tr className="border-t-2 border-slate-200 dark:border-neutral-700">
+                        <td colSpan={2} className={`sticky left-0 z-20 bg-slate-50/80 dark:bg-neutral-900/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] px-5 py-3.5 text-sm font-bold ${ttl}`}>Genel Toplam</td>
+                        <td className="px-5 py-3.5 bg-slate-50/80 dark:bg-neutral-900/50"/>
+                        <td className="px-5 py-3.5 text-right bg-slate-50/80 dark:bg-neutral-900/50">
                           {(()=>{
                             const g = allEntries.reduce((s,e)=>s+(calcType(e.type)==='income'?e.amount:-e.amount),0);
                             return <span className={`text-base font-bold tabular-nums ${g>=0?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
