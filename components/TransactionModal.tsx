@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, CheckCircle2, ChevronRight, CalendarDays, WalletCards, ArrowRightLeft, Repeat, Coins } from 'lucide-react';
+import { X, CheckCircle2, ChevronRight, CalendarDays, WalletCards, ArrowRightLeft, Repeat, Coins, Bell } from 'lucide-react';
 
 export type TransactionPayload = {
   type: 'expense' | 'income' | 'transfer';
@@ -13,6 +13,7 @@ export type TransactionPayload = {
   installmentCount?: number;
   dueDay?: number;
   date?: string;
+  isReminder?: boolean;
 };
 
 export default function TransactionModal({ 
@@ -25,7 +26,7 @@ export default function TransactionModal({
   onSave: (data: TransactionPayload) => void;
 }) {
   const [activeTab, setActiveTab] = useState<'expense' | 'income' | 'transfer'>('expense');
-  const [paymentType, setPaymentType] = useState<'one-time' | 'recurring'>('one-time');
+  const [paymentType, setPaymentType] = useState<'one-time' | 'recurring' | 'reminder'>('one-time');
   
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -59,7 +60,8 @@ export default function TransactionModal({
         isInstallment: paymentType === 'one-time' && isInstallment && activeTab === 'expense',
         installmentCount: (paymentType === 'one-time' && isInstallment && activeTab === 'expense') ? installmentCount : undefined,
         dueDay: (activeTab === 'expense' && (paymentType === 'recurring' || isInstallment)) ? dueDay : undefined,
-        date: paymentType === 'one-time' ? new Date(transactionDate).toISOString() : undefined
+        date: (paymentType === 'one-time' || paymentType === 'reminder') ? new Date(transactionDate).toISOString() : undefined,
+        isReminder: paymentType === 'reminder'
       });
       setIsSaving(false);
       
@@ -156,33 +158,43 @@ export default function TransactionModal({
 
             {/* Recurrence Type Toggle */}
             <div className="space-y-1.5 pt-2">
-               <label className="text-sm font-medium text-slate-700 leading-none block mb-2">İşlem Sıklığı</label>
-               <div className="grid grid-cols-2 gap-3">
+               <label className="text-sm font-medium text-slate-700 leading-none block mb-2">İşlem Tipi & Sıklığı</label>
+               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   <div 
-                    onClick={() => { setPaymentType('one-time'); setRepeatUntil(''); }}
-                    className={`cursor-pointer border rounded-lg p-3 flex flex-col gap-2 transition-all ${paymentType === 'one-time' ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300'}`}
+                    onClick={() => { setPaymentType('one-time'); setRepeatUntil(''); setIsInstallment(false); }}
+                    className={`cursor-pointer border rounded-lg p-2.5 sm:p-3 flex flex-col gap-1.5 sm:gap-2 transition-all ${paymentType === 'one-time' ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300'}`}
                   >
-                     <Coins className={`w-5 h-5 ${paymentType === 'one-time' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                     <Coins className={`w-4 h-4 sm:w-5 sm:h-5 ${paymentType === 'one-time' ? 'text-indigo-600' : 'text-slate-400'}`} />
                      <div>
-                       <p className={`text-sm font-medium leading-none ${paymentType === 'one-time' ? 'text-indigo-900' : 'text-slate-700'}`}>Tek Seferlik</p>
-                       <p className="text-xs text-slate-500 mt-1">Sadece bu ay için geçerli hareket.</p>
+                       <p className={`text-xs sm:text-sm font-medium leading-none ${paymentType === 'one-time' ? 'text-indigo-900' : 'text-slate-700'}`}>Tek Sefer</p>
+                       <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">Sadece bu aya özel.</p>
                      </div>
                   </div>
                   <div 
                     onClick={() => { setPaymentType('recurring'); setIsInstallment(false); }}
-                    className={`cursor-pointer border rounded-lg p-3 flex flex-col gap-2 transition-all ${paymentType === 'recurring' ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300'}`}
+                    className={`cursor-pointer border rounded-lg p-2.5 sm:p-3 flex flex-col gap-1.5 sm:gap-2 transition-all ${paymentType === 'recurring' ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300'}`}
                   >
-                     <Repeat className={`w-5 h-5 ${paymentType === 'recurring' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                     <Repeat className={`w-4 h-4 sm:w-5 sm:h-5 ${paymentType === 'recurring' ? 'text-indigo-600' : 'text-slate-400'}`} />
                      <div>
-                       <p className={`text-sm font-medium leading-none ${paymentType === 'recurring' ? 'text-indigo-900' : 'text-slate-700'}`}>Düzenli (Aylık)</p>
-                       <p className="text-xs text-slate-500 mt-1">Her ay otomatik yansıyacak.</p>
+                       <p className={`text-xs sm:text-sm font-medium leading-none ${paymentType === 'recurring' ? 'text-indigo-900' : 'text-slate-700'}`}>Düzenli</p>
+                       <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">Aylık otomatik işler.</p>
+                     </div>
+                  </div>
+                  <div 
+                    onClick={() => { setPaymentType('reminder'); setRepeatUntil(''); setIsInstallment(false); }}
+                    className={`cursor-pointer border rounded-lg p-2.5 sm:p-3 flex flex-col gap-1.5 sm:gap-2 transition-all ${paymentType === 'reminder' ? 'border-amber-600 bg-amber-50/50 ring-1 ring-amber-600' : 'border-slate-200 hover:border-slate-300'}`}
+                  >
+                     <Bell className={`w-4 h-4 sm:w-5 sm:h-5 ${paymentType === 'reminder' ? 'text-amber-600' : 'text-slate-400'}`} />
+                     <div>
+                       <p className={`text-xs sm:text-sm font-medium leading-none ${paymentType === 'reminder' ? 'text-amber-900' : 'text-slate-700'}`}>Hatırlatıcı</p>
+                       <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">Bakiyeden düşmez.</p>
                      </div>
                   </div>
                </div>
             </div>
 
-            {/* Conditional: Date Target for One-Time */}
-            {paymentType === 'one-time' && (
+            {/* Conditional: Date Target for One-Time OR Reminder */}
+            {(paymentType === 'one-time' || paymentType === 'reminder') && (
               <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 pt-2">
                 <label className="text-sm font-medium text-slate-700 leading-none">
                   İşlem Tarihi

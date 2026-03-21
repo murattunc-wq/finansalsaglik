@@ -23,6 +23,14 @@ import TransactionModal, { TransactionPayload } from '@/components/TransactionMo
    TYPES
    ============================================================ */
 type RecurringItem = { id: string; type: 'income'|'expense'; category: string; name: string; amount: number; color: string; order?: number; dueDay?: number; date?: string; repeatUntil?: string; };
+
+export type ReminderItem = {
+  id: string;
+  name: string;
+  amount: number;
+  date: string;
+  type: 'expense' | 'income';
+};
 type InstallmentItem = { id: string; name: string; total: number; remaining: number; monthly: number; date: string; dueDay?: number };
 type Transaction = { id: string; name: string; type: 'income'|'expense'|'transfer'; amount: number; date: string; isRecurringBase?: boolean; avatarPrefix: string };
 
@@ -51,7 +59,11 @@ function loadLS<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
-  } catch { return fallback; }
+  } catch { 
+    const raw = localStorage.getItem(key);
+    if (typeof fallback === 'string' && raw !== null) return raw as unknown as T;
+    return fallback; 
+  }
 }
 
 /* ============================================================
@@ -136,6 +148,9 @@ export default function FinanceDashboard() {
   const [dueDayEditValue, setDueDayEditValue] = useState<number>(1);
   const [draggedId, setDraggedId] = useState<string|null>(null);
 
+  /* ---- Reminders ---- */
+  const [reminders, setReminders] = useState<ReminderItem[]>(() => loadLS('fcv2_reminders', []));
+
   /* ---- Persist to localStorage on change ---- */
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_baseCapital',  JSON.stringify(baseCapital));  }, [baseCapital,  mounted]);
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_savingGoal',   JSON.stringify(savingGoal));   }, [savingGoal,   mounted]);
@@ -143,6 +158,7 @@ export default function FinanceDashboard() {
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_installments', JSON.stringify(installments)); }, [installments, mounted]);
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_transactions', JSON.stringify(transactions)); }, [transactions, mounted]);
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_overrides',    JSON.stringify(overrides));    }, [overrides,    mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem('fcv2_reminders',    JSON.stringify(reminders));    }, [reminders,    mounted]);
   
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_hiddenProjections', JSON.stringify(hiddenProjections)); }, [hiddenProjections, mounted]);
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_paidStatus',        JSON.stringify(paidStatus)); }, [paidStatus, mounted]);
@@ -173,6 +189,7 @@ export default function FinanceDashboard() {
           if (d.installments) setInstallments(d.installments);
           if (d.transactions) setTransactions(d.transactions);
           if (d.overrides) setOverrides(d.overrides);
+          if (d.reminders) setReminders(d.reminders);
           if (d.hiddenProjections) setHiddenProjections(d.hiddenProjections);
           if (d.paidStatus) setPaidStatus(d.paidStatus);
           if (d.customOrders) setCustomOrders(d.customOrders);
@@ -196,7 +213,7 @@ export default function FinanceDashboard() {
       setLastSyncTs(nowTs);
       const payload = {
         baseCapital, savingGoal, recurring, installments, transactions,
-        overrides, hiddenProjections, paidStatus, customOrders,
+        overrides, reminders, hiddenProjections, paidStatus, customOrders,
         lastSync: nowTs
       };
       try {
@@ -213,7 +230,7 @@ export default function FinanceDashboard() {
     return () => clearTimeout(timer);
   }, [
     baseCapital, savingGoal, recurring, installments, transactions,
-    overrides, hiddenProjections, paidStatus, customOrders,
+    overrides, reminders, hiddenProjections, paidStatus, customOrders,
     isDataLoadedFromDB, sessionUser?.email
   ]);
 
@@ -221,7 +238,11 @@ export default function FinanceDashboard() {
      HANDLERS
      ============================================================ */
   const handleTransactionSave = (payload: TransactionPayload) => {
-    if (payload.isRecurring) {
+    if (payload.isReminder) {
+      setReminders(prev => [...prev, {
+        id: `rm-${Date.now()}`, name: payload.description, amount: payload.amount, date: payload.date || new Date().toISOString(), type: payload.type as 'expense' | 'income'
+      }]);
+    } else if (payload.isRecurring) {
       setRecurring(prev => [...prev, {
         id: `r-${Date.now()}`, type: payload.type === 'income' ? 'income' : 'expense',
         category: payload.description, name: payload.description, amount: payload.amount,
@@ -556,10 +577,22 @@ export default function FinanceDashboard() {
     setActiveTxnMenu(null);
   };
 
-  const handleMarkPaid = (id: string) => {
-    const monthKey = format(new Date(), 'yyyy-MM');
-    const statusKey = `${monthKey}-${id}`;
-    setPaidStatus(prev => ({ ...prev, [statusKey]: true }));
+  const handleMarkPaid = (id: string, isReminder = false) => {
+    if (isReminder) {
+      const rem = reminders.find(r => `rem-${r.id}` === id);
+      if (rem) {
+        // Convert to transaction and remove from reminders
+        setTransactions(prev => [{
+          id: `t-${Date.now()}`, name: rem.name, type: rem.type || 'expense', amount: rem.amount,
+          date: new Date().toISOString(), avatarPrefix: rem.name.charAt(0).toUpperCase()
+        }, ...prev]);
+        setReminders(prev => prev.filter(r => r.id !== rem.id));
+      }
+    } else {
+      const monthKey = format(new Date(), 'yyyy-MM');
+      const statusKey = `${monthKey}-${id}`;
+      setPaidStatus(prev => ({ ...prev, [statusKey]: true }));
+    }
     setActiveTxnMenu(null);
   };
 
@@ -836,7 +869,8 @@ export default function FinanceDashboard() {
     
     const activeList = [
       ...installments.map(i => ({ id: `inst-${i.id}`, name: i.name, amount: i.monthly, remaining: i.remaining, type: 'installment' as const, dueDay: i.dueDay || 1 })),
-      ...recurring.filter(r=>r.type==='expense').map(r => ({ id: `rec-${r.id}`, name: r.name, amount: r.amount, type: 'recurring' as const, dueDay: r.dueDay || 1 }))
+      ...recurring.filter(r=>r.type==='expense').map(r => ({ id: `rec-${r.id}`, name: r.name, amount: r.amount, type: 'recurring' as const, dueDay: r.dueDay || 1 })),
+      ...reminders.map(rem => ({ id: `rem-${rem.id}`, name: rem.name, amount: rem.amount, type: 'reminder' as const, dueDay: new Date(rem.date).getDate(), isReminder: true }))
     ];
     activeList.sort((a, b) => {
       const aDiff = a.dueDay >= currentDay ? a.dueDay - currentDay : a.dueDay + 31 - currentDay;
@@ -845,6 +879,7 @@ export default function FinanceDashboard() {
     });
 
     const activeListWithStatus = activeList.map(liab => {
+      if ((liab as any).isReminder) return { ...liab, isPaid: false };
       const monthKey = format(today, 'yyyy-MM');
       const manuallyPaid = paidStatus[`${monthKey}-${liab.id}`] || false;
       // Auto-detect: if dueDay already passed this month, treat as paid
@@ -1546,9 +1581,12 @@ export default function FinanceDashboard() {
                           />
                         ) : (
                           <span 
-                            title="Ödeme gününü değiştirmek için tıklayın"
-                            onClick={(e)=>{e.stopPropagation();setEditingDueDay({id:item.id, type:item.type as any});setDueDayEditValue(item.dueDay||1);}}
-                            className={`inline-block mr-2 w-5 h-5 text-center text-[10px] leading-5 font-bold rounded cursor-pointer hover:ring-1 hover:ring-indigo-500 transition-all ${item.isPaid ? 'bg-slate-100 text-slate-400 dark:bg-neutral-900 dark:text-neutral-500' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'}`}>
+                            title={item.type === 'reminder' ? "Hatırlatıcı Günü" : "Ödeme gününü değiştirmek için tıklayın"}
+                            onClick={(e)=>{
+                              if(item.type === 'reminder') return;
+                              e.stopPropagation();setEditingDueDay({id:item.id, type:item.type as any});setDueDayEditValue(item.dueDay||1);
+                            }}
+                            className={`inline-block mr-2 w-5 h-5 flex items-center justify-center text-[10px] leading-5 font-bold rounded ${item.type !== 'reminder' ? 'cursor-pointer hover:ring-1 hover:ring-indigo-500' : ''} transition-all ${item.isPaid ? 'bg-slate-100 text-slate-400 dark:bg-neutral-900 dark:text-neutral-500' : item.type === 'reminder' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-500' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'}`}>
                             {item.dueDay}
                           </span>
                         )}
@@ -1562,6 +1600,11 @@ export default function FinanceDashboard() {
                           <>
                             <p className={`text-sm font-bold ${title}`}>₺{item.remaining?.toLocaleString('tr-TR',{maximumFractionDigits:0})}</p>
                             <p className={`text-xs ${muted} mt-0.5`}>Kalan</p>
+                          </>
+                        ) : item.type === 'reminder' ? (
+                          <>
+                            <p className={`text-sm font-bold ${title} flex items-center justify-end gap-1`}><Bell className="w-3.5 h-3.5 text-amber-500"/> Hatırlatıcı</p>
+                            <p className={`text-xs ${muted} mt-0.5 whitespace-nowrap`}>İşlem</p>
                           </>
                         ) : (
                           <>
@@ -1577,12 +1620,13 @@ export default function FinanceDashboard() {
                         {activeTxnMenu===item.id && (
                           <div className="absolute right-0 top-7 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[160px]">
                             {!item.isPaid && (
-                              <button onClick={()=>{handleMarkPaid(item.id);}} className="px-4 py-2.5 text-xs text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2 w-full font-medium">
+                              <button onClick={()=>{handleMarkPaid(item.id, item.type === 'reminder');}} className="px-4 py-2.5 text-xs text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2 w-full font-medium">
                                 <FileText className="w-3.5 h-3.5"/> Ödendi İşaretle
                               </button>
                             )}
                             <button onClick={()=>{
                               if(item.type==='installment') setInstallments(prev=>prev.filter(i=>`inst-${i.id}`!==item.id));
+                              else if(item.type==='reminder') setReminders(prev=>prev.filter(r=>`rem-${r.id}`!==item.id));
                               else setRecurring(prev=>prev.filter(r=>`rec-${r.id}`!==item.id));
                               setActiveTxnMenu(null);
                             }} className="px-4 py-2.5 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 w-full font-medium border-t border-slate-100 dark:border-neutral-800">
