@@ -51,31 +51,29 @@ export default function TransactionModal({
 
   const handleSave = () => {
     setIsSaving(true);
-    setTimeout(() => {
-      onSave({
-        type: activeTab,
-        amount: parseFloat(amount),
-        description,
-        isRecurring: paymentType === 'recurring',
-        repeatUntil: paymentType === 'recurring' ? repeatUntil : undefined,
-        isInstallment: paymentType === 'one-time' && isInstallment && activeTab === 'expense',
-        installmentCount: (paymentType === 'one-time' && isInstallment && activeTab === 'expense') ? installmentCount : undefined,
-        dueDay: (activeTab === 'expense' && (paymentType === 'recurring' || isInstallment)) ? dueDay : undefined,
-        date: paymentType === 'one-time' ? new Date(transactionDate).toISOString() : undefined,
-        isReminder: isReminder
-      });
-      setIsSaving(false);
-      
-      // Reset state for next open
-      setAmount('');
-      setDescription('');
-      setIsInstallment(false);
-      setIsReminder(false);
-      setPaymentType('one-time');
-      setDueDay(1);
-      const d = new Date();
-      setTransactionDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
-    }, 400); // UI feedback delay
+    onSave({
+      type: activeTab,
+      amount: parseFloat(amount),
+      description,
+      isRecurring: paymentType === 'recurring',
+      repeatUntil: paymentType === 'recurring' ? repeatUntil : undefined,
+      isInstallment: paymentType === 'one-time' && isInstallment && activeTab === 'expense',
+      installmentCount: (paymentType === 'one-time' && isInstallment && activeTab === 'expense') ? installmentCount : undefined,
+      dueDay: (activeTab === 'expense' && (paymentType === 'recurring' || isInstallment)) ? dueDay : undefined,
+      date: paymentType === 'one-time' ? new Date(transactionDate).toISOString() : undefined,
+      isReminder: isReminder
+    });
+    setIsSaving(false);
+    
+    // Reset state for next open
+    setAmount('');
+    setDescription('');
+    setIsInstallment(false);
+    setIsReminder(false);
+    setPaymentType('one-time');
+    setDueDay(1);
+    const d = new Date();
+    setTransactionDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
   };
 
   const isSaveDisabled = isSaving || !amount || !description || (paymentType === 'recurring' && !repeatUntil);

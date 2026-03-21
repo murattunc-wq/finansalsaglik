@@ -249,6 +249,11 @@ export default function FinanceDashboard() {
      HANDLERS
      ============================================================ */
   const handleTransactionSave = (payload: TransactionPayload) => {
+    let calUrl = '';
+    if (payload.isReminder) {
+      calUrl = getGoogleCalendarUrl(payload.description, payload.date || new Date().toISOString(), payload.amount);
+    }
+
     if (payload.isReminder && !payload.isRecurring) {
       setReminders(prev => [...prev, {
         id: `rm-${Date.now()}`, name: payload.description, amount: payload.amount, date: payload.date || new Date().toISOString(), type: payload.type as 'expense' | 'income'
@@ -278,6 +283,12 @@ export default function FinanceDashboard() {
         avatarPrefix: payload.description.charAt(0).toUpperCase(),
       }, ...prev]);
     }
+    
+    // Auto-open calendar link if it's a reminder
+    if (calUrl) {
+      window.open(calUrl, '_blank');
+    }
+    
     setIsModalOpen(false);
   };
 
@@ -1735,7 +1746,7 @@ export default function FinanceDashboard() {
                               <MoreVertical className="w-3.5 h-3.5"/>
                             </button>
                             {activeMatrixMenu===item.id && (
-                              <div className="absolute left-6 top-0 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[140px]">
+                              <div className="absolute right-0 top-7 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[140px]">
                                 {item.baseItem?.isReminder && (
                                   <a 
                                     href={getGoogleCalendarUrl(item.name, item.baseItem.date || new Date().toISOString(), item.baseItem.amount)} 
