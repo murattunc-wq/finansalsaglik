@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import {
   Moon, Sun, Calculator, FileEdit, Trash2, TrendingDown, TrendingUp,
-  Sparkles, Info, Plus, X, ChevronDown, ChevronUp, Settings2
+  Sparkles, Info, Plus, X, ChevronDown, ChevronUp, Settings2, Eye, EyeOff, Lock
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -23,7 +23,7 @@ function loadLS<T>(key: string, fallback: T): T {
 /* ============================================================
    TYPES
    ============================================================ */
-type RuleType = 'income' | 'expense';
+type RuleType = 'income' | 'expense' | 'pending' | 'upcoming';
 interface CustomRule { id: string; keyword: string; type: RuleType; }
 
 /* ============================================================
@@ -39,6 +39,23 @@ const MONTH_LABEL: Record<number, string> = {
 const BUILTIN_INCOME_KW = ['gelir','getiri','maaş','maas','kira gelir','faiz','nakit gir','vadeli getiri'];
 
 type ParsedEntry = { month: number; label: string; amount: number; type: RuleType };
+
+/** Map pending/upcoming → expense for calculation purposes */
+function calcType(t: RuleType): 'income' | 'expense' {
+  return (t === 'income' || t === 'upcoming') ? 'income' : 'expense';
+}
+
+const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+  pending:  { label: 'Ödenecek',      cls: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' },
+  upcoming: { label: 'Gelecek Ödeme', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
+};
+
+const RULE_TYPE_OPTIONS: { value: RuleType; label: string; active: string; }[] = [
+  { value: 'income',   label: 'Gelir',          active: 'bg-emerald-500 text-white' },
+  { value: 'expense',  label: 'Gider',           active: 'bg-rose-500 text-white' },
+  { value: 'pending',  label: 'Ödenecek',        active: 'bg-amber-500 text-white' },
+  { value: 'upcoming', label: 'Gelecek Ödeme',   active: 'bg-blue-500 text-white' },
+];
 
 /* ============================================================
    PARSER FUNCTIONS
@@ -307,8 +324,24 @@ export default function NotesPage() {
   const [calcOp, setCalcOp] = useState<string|null>(null);
   const [newNum, setNewNum] = useState(false);
 
+  // Privacy Mode
+  const [isPrivacyMode, setIsPrivacyMode] = useState<boolean>(() => loadLS('fcv2_privacy_mode', false));
+  const [savedPin, setSavedPin] = useState<string>(() => loadLS('fcv2_notes_pin', ''));
+  const [pinAction, setPinAction] = useState<'set'|'unlock'|'remove'|null>(null); // Controls PIN Modals if needed
+  const [pinInput, setPinInput] = useState('');
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'fcv2_privacy_mode') setIsPrivacyMode(e.newValue === 'true');
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_daily_notes', JSON.stringify(notes)); }, [notes, mounted]);
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_notes_rules', JSON.stringify(customRules)); }, [customRules, mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem('fcv2_notes_pin', JSON.stringify(savedPin)); }, [savedPin, mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem('fcv2_privacy_mode', JSON.stringify(isPrivacyMode)); }, [isPrivacyMode, mounted]);
 
   const addRule = () => {
     const kw = newKw.trim().toLowerCase();
@@ -363,11 +396,65 @@ export default function NotesPage() {
   const muted = "text-slate-500 dark:text-neutral-400";
   const ttl   = "text-slate-900 dark:text-neutral-50";
   const isDark = mounted && theme === 'dark';
+  
+  const handleTogglePrivacy = () => {
+    if (!isPrivacyMode) {
+      setIsPrivacyMode(true); // Always freely lock
+    } else {
+      // Unlocking: if has PIN, ask for PIN. Else freely unlock
+      if (savedPin) {
+        setPinAction('unlock');
+        setPinInput('');
+      } else {
+        setIsPrivacyMode(false);
+      }
+    }
+  };
+
+  const handlePinSubmit = () => {
+    if (pinAction === 'unlock') {
+      if (pinInput === savedPin) { setIsPrivacyMode(false); setPinAction(null); }
+      else alert('Hatalı PIN.');
+    } else if (pinAction === 'set') {
+      if (pinInput.length >= 4) { setSavedPin(pinInput); setPinAction(null); }
+      else alert('PIN en az 4 haneli olmalı.');
+    } else if (pinAction === 'remove') {
+      if (pinInput === savedPin) { setSavedPin(''); setPinAction(null); }
+      else alert('Hatalı PIN.');
+    }
+  };
+
+  const privacyClass = isPrivacyMode ? "filter blur-md select-none pointer-events-none transition-all duration-300" : "transition-all duration-300";
 
   if (!mounted) return null;
 
   return (
-    <div className={bg} onClick={() => setIsProfileOpen(false)}>
+    <div className={`${bg} relative`} onClick={() => setIsProfileOpen(false)}>
+
+      {/* PIN Modal Overlay */}
+      {pinAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+          <div className={`${card} p-6 w-full max-w-sm flex flex-col gap-4 mx-4 shadow-xl`} onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-indigo-500" />
+              <h3 className={`text-lg font-bold ${ttl}`}>
+                {pinAction==='unlock' ? 'Gizliliği Kaldır' : pinAction==='set' ? 'Yeni PIN Belirle' : 'PIN Kaldır'}
+              </h3>
+            </div>
+            <p className={`text-sm ${muted}`}>
+              {pinAction==='unlock' ? 'Verileri görmek için mevcut PIN kodunuzu girin.' : pinAction==='set' ? 'Gizlilik modunu açarken kullanılacak yeni bir PIN kodu belirleyin.' : 'Mevcut PIN kodunuzu girerek korumayı kaldırın.'}
+            </p>
+            <input type="password" placeholder="****" value={pinInput} maxLength={8} autoFocus
+              onChange={e=>setPinInput(e.target.value.replace(/[^0-9]/g,''))}
+              onKeyDown={e=>e.key==='Enter'&&handlePinSubmit()}
+              className={`w-full px-4 py-3 text-2xl tracking-widest text-center rounded-xl border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 ${ttl} focus:outline-none focus:border-indigo-500`} />
+            <div className="flex gap-2">
+              <button onClick={()=>setPinAction(null)} className={`flex-1 px-4 py-2.5 rounded-lg font-medium text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors`}>İptal</button>
+              <button onClick={handlePinSubmit} disabled={!pinInput} className="flex-1 px-4 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors">Onayla</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* NAV */}
       <div className={`${navBg} sticky top-0 z-40`}>
@@ -422,16 +509,19 @@ export default function NotesPage() {
                   <h2 className={`font-semibold text-sm ${ttl}`}>Hesaplama Defteri</h2>
                 </div>
                 <div className="flex items-center gap-3">
+                  <button onClick={handleTogglePrivacy} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${isPrivacyMode ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400' : `hover:bg-slate-200 dark:hover:bg-neutral-800 ${muted}`}`}>
+                    {isPrivacyMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {isPrivacyMode ? 'Gizli' : 'Gizle'}
+                  </button>
                   {notes.length>0 && <button onClick={()=>setNotes('')} className={`text-xs ${muted} hover:text-rose-500 transition-colors`}>Temizle</button>}
                   {notes==='' && <button onClick={()=>setNotes(DEMO_NOTES)} className="text-xs font-medium text-indigo-500 hover:text-indigo-700">✦ Demo Yükle</button>}
-                  <span className={`text-xs ${muted}`}>Otomatik Kaydedilir</span>
                 </div>
               </div>
               <textarea
                 value={notes}
                 onChange={e=>setNotes(e.target.value)}
                 placeholder={`Nisan\n23000 kt\n34000 ykb\n8000 vakıfbank\n37k vergi borcu\n\nMayıs\n9500 kt\n29000 ykb`}
-                className="w-full resize-none p-5 bg-transparent text-slate-800 dark:text-neutral-200 outline-none leading-relaxed text-sm md:text-[15px] font-mono placeholder:text-slate-300 dark:placeholder:text-neutral-700"
+                className={`w-full resize-none p-5 bg-transparent text-slate-800 dark:text-neutral-200 outline-none leading-relaxed text-sm md:text-[15px] font-mono placeholder:text-slate-300 dark:placeholder:text-neutral-700 ${privacyClass}`}
                 rows={14}
                 spellCheck={false}
               />
@@ -461,9 +551,13 @@ export default function NotesPage() {
                     <input type="text" placeholder="anahtar kelime..." value={newKw}
                       onChange={e=>setNewKw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addRule()}
                       className={`flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#18181b] ${ttl} focus:outline-none focus:border-indigo-400 transition-colors`}/>
-                    <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-neutral-800 shrink-0">
-                      <button onClick={()=>setNewKwType('income')} className={`px-3 py-2 text-xs font-semibold transition-colors ${newKwType==='income'?'bg-emerald-500 text-white':`bg-white dark:bg-[#18181b] ${muted}`}`}>Gelir</button>
-                      <button onClick={()=>setNewKwType('expense')} className={`px-3 py-2 text-xs font-semibold transition-colors border-l border-slate-200 dark:border-neutral-800 ${newKwType==='expense'?'bg-rose-500 text-white':`bg-white dark:bg-[#18181b] ${muted}`}`}>Gider</button>
+                    <div className="flex flex-wrap rounded-lg overflow-hidden border border-slate-200 dark:border-neutral-800 shrink-0">
+                      {RULE_TYPE_OPTIONS.map((opt, i) => (
+                        <button key={opt.value} onClick={()=>setNewKwType(opt.value)}
+                          className={`px-3 py-2 text-xs font-semibold transition-colors ${i>0?'border-l border-slate-200 dark:border-neutral-800':''} ${newKwType===opt.value ? opt.active : `bg-white dark:bg-[#18181b] ${muted}`}`}>
+                          {opt.label}
+                        </button>
+                      ))}
                     </div>
                     <button onClick={addRule} disabled={!newKw.trim()} className="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 text-white rounded-lg transition-colors"><Plus className="w-4 h-4"/></button>
                   </div>
@@ -472,12 +566,12 @@ export default function NotesPage() {
                       {customRules.map(rule=>(
                         <div key={rule.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-neutral-900 border border-slate-100 dark:border-neutral-800 group">
                           <div className="flex items-center gap-3">
-                            <span className={`w-2 h-2 rounded-full ${rule.type==='income'?'bg-emerald-500':'bg-rose-500'}`}/>
+                            <span className={`w-2 h-2 rounded-full ${rule.type==='income'?'bg-emerald-500':rule.type==='expense'?'bg-rose-500':rule.type==='pending'?'bg-amber-500':'bg-blue-500'}`}/>
                             <span className={`text-sm font-medium ${ttl} font-mono`}>{rule.keyword}</span>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${rule.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'}`}>
-                              {rule.type==='income'?'Gelir':'Gider'}
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${rule.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':rule.type==='expense'?'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400':STATUS_BADGE[rule.type].cls}`}>
+                              {RULE_TYPE_OPTIONS.find(o=>o.value===rule.type)?.label}
                             </span>
                             <button onClick={()=>removeRule(rule.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-500 transition-opacity"><X className="w-3.5 h-3.5"/></button>
                           </div>
@@ -490,6 +584,19 @@ export default function NotesPage() {
                     <div className="flex flex-wrap gap-1.5">
                       {BUILTIN_INCOME_KW.map(kw=><span key={kw} className="text-[11px] font-mono bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded">{kw}</span>)}
                     </div>
+                  </div>
+                  
+                  {/* PIN Settings Area */}
+                  <div className="pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between mt-1">
+                    <div>
+                      <p className={`text-sm font-semibold ${ttl}`}>Gizlilik PIN Kodu</p>
+                      <p className={`text-xs ${muted}`}>Ekranı kilitleyip kilidi açmak için</p>
+                    </div>
+                    {savedPin ? (
+                      <button onClick={()=>{setPinAction('remove');setPinInput('');}} className="px-3 py-1.5 text-xs font-semibold bg-rose-100 text-rose-600 hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/30 rounded transition-colors">PIN&apos;i Kaldır</button>
+                    ) : (
+                      <button onClick={()=>{setPinAction('set');setPinInput('');}} className="px-3 py-1.5 text-xs font-semibold bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-400 dark:hover:bg-indigo-500/30 rounded transition-colors">PIN Belirle</button>
+                    )}
                   </div>
                 </div>
               )}
@@ -513,10 +620,10 @@ export default function NotesPage() {
                         <th className={`px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted} w-36`}>Aylık Net</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className={privacyClass}>
                       {sortedMonths.map(month => {
                         const monthEntries = byMonth[month];
-                        const total = monthEntries.reduce((s,e) => s+(e.type==='income'?e.amount:-e.amount), 0);
+                        const total = monthEntries.reduce((s,e) => s+(calcType(e.type)==='income'?e.amount:-e.amount), 0);
                         const isCurrent = month === NOW_MONTH;
                         return monthEntries.map((entry,i) => (
                           <tr key={`${month}-${i}`}
@@ -533,13 +640,18 @@ export default function NotesPage() {
                             )}
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-2">
-                                {entry.type==='income'?<TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>:<TrendingDown className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
+                                {calcType(entry.type)==='income'?<TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>:<TrendingDown className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
                                 <span className={`text-sm ${ttl}`}>{entry.label}</span>
+                                {STATUS_BADGE[entry.type] && (
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${STATUS_BADGE[entry.type].cls}`}>
+                                    {STATUS_BADGE[entry.type].label}
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="px-5 py-3 text-right">
-                              <span className={`text-sm font-medium tabular-nums ${entry.type==='income'?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
-                                {entry.type==='expense'?'-':'+'}₺{entry.amount.toLocaleString('tr-TR')}
+                              <span className={`text-sm font-medium tabular-nums ${calcType(entry.type)==='income'?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
+                                {calcType(entry.type)==='expense'?'-':'+'}₺{entry.amount.toLocaleString('tr-TR')}
                               </span>
                             </td>
                             {i===0 && (
@@ -553,13 +665,13 @@ export default function NotesPage() {
                         ));
                       })}
                     </tbody>
-                    <tfoot>
+                    <tfoot className={privacyClass}>
                       <tr className="border-t-2 border-slate-200 dark:border-neutral-700 bg-slate-50/80 dark:bg-neutral-900/50">
                         <td colSpan={2} className={`px-5 py-3.5 text-sm font-bold ${ttl}`}>Genel Toplam</td>
                         <td className="px-5 py-3.5"/>
                         <td className="px-5 py-3.5 text-right">
                           {(()=>{
-                            const g = allEntries.reduce((s,e)=>s+(e.type==='income'?e.amount:-e.amount),0);
+                            const g = allEntries.reduce((s,e)=>s+(calcType(e.type)==='income'?e.amount:-e.amount),0);
                             return <span className={`text-base font-bold tabular-nums ${g>=0?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
                               {g>=0?'+':'-'}₺{Math.abs(g).toLocaleString('tr-TR')}
                             </span>;
@@ -588,7 +700,7 @@ export default function NotesPage() {
                 <h2 className={`font-semibold text-sm ${ttl}`}>Hesap Makinesi</h2>
               </div>
               <div className="p-4 flex flex-col gap-3">
-                <div className="bg-slate-100 dark:bg-[#18181b] rounded-xl px-4 py-3 flex flex-col items-end border border-slate-200 dark:border-neutral-800 min-h-[72px] justify-end">
+                <div className={`bg-slate-100 dark:bg-[#18181b] rounded-xl px-4 py-3 flex flex-col items-end border border-slate-200 dark:border-neutral-800 min-h-[72px] justify-end ${privacyClass}`}>
                   <div className={`text-xs ${muted} h-4 self-start`}>{calcPrev&&calcOp?`${calcPrev} ${calcOp}`:''}</div>
                   <div className={`text-3xl font-bold ${ttl} break-all text-right mt-1`}>
                     {isNaN(parseFloat(calcInput))?'0':parseFloat(calcInput).toLocaleString('tr-TR',{maximumFractionDigits:4})}

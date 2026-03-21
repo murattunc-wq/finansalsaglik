@@ -9,7 +9,7 @@ import {
 import { 
   Search, Bell, Moon, Sun, User, ArrowUpRight, ArrowDownRight, 
   Plus, CalendarDays, Wallet, TrendingUp, FileText,
-  MoreVertical, Trash2, Edit2, Download, Upload
+  MoreVertical, Trash2, Edit2, Download, Upload, Eye, EyeOff, Lock
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -110,7 +110,26 @@ export default function FinanceDashboard() {
   const [hiddenProjections,   setHiddenProjections]   = useState<string[]>(() => loadLS('fcv2_hiddenProjections', []));
   const [paidStatus,          setPaidStatus]          = useState<Record<string, boolean>>(() => loadLS('fcv2_paidStatus', {}));
   const [customOrders,        setCustomOrders]        = useState<Record<string, number>>(() => loadLS('fcv2_customOrders', INIT_ORDERS));
+  const [lastSyncTs,          setLastSyncTs]          = useState<number>(() => loadLS('fcv2_lastSync', 0));
   const [searchQuery,         setSearchQuery]         = useState('');
+  
+  /* ---- Privacy Mode states ---- */
+  const [isPrivacyMode, setIsPrivacyMode] = useState<boolean>(() => loadLS('fcv2_privacy_mode', false));
+  const [savedPin, setSavedPin] = useState<string>(() => loadLS('fcv2_notes_pin', ''));
+  const [pinAction, setPinAction] = useState<'set'|'unlock'|'remove'|null>(null);
+  const [pinInput, setPinInput] = useState('');
+
+  // Base Capital Editor
+  const [isEditingBase, setIsEditingBase] = useState(false);
+  const [baseInput, setBaseInput] = useState('');
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'fcv2_privacy_mode') setIsPrivacyMode(e.newValue === 'true');
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
   
   /* ---- Feedback Revision states ---- */
   const [editingDueDay, setEditingDueDay] = useState<{id:string, type:'installment'|'recurring'}|null>(null);
@@ -129,41 +148,56 @@ export default function FinanceDashboard() {
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_paidStatus',        JSON.stringify(paidStatus)); }, [paidStatus, mounted]);
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_customOrders',      JSON.stringify(customOrders)); }, [customOrders, mounted]);
   useEffect(() => { if (mounted && dateRange?.from) localStorage.setItem('fcv2_dateRange', JSON.stringify({ from: dateRange.from?.toISOString(), to: dateRange.to?.toISOString() })); }, [dateRange, mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem('fcv2_notes_pin', JSON.stringify(savedPin)); }, [savedPin, mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem('fcv2_privacy_mode', JSON.stringify(isPrivacyMode)); }, [isPrivacyMode, mounted]);
+  useEffect(() => { if (mounted) localStorage.setItem('fcv2_lastSync', JSON.stringify(lastSyncTs)); }, [lastSyncTs, mounted]);
 
   /* ---- Sync with DB ---- */
   const [isDataLoadedFromDB, setIsDataLoadedFromDB] = useState(false);
+  const [dbFetchRan, setDbFetchRan] = useState(false);
 
   useEffect(() => {
-    if (!sessionUser?.email) return;
+    if (!sessionUser?.email || dbFetchRan) return;
     let isStale = false;
     fetch(`/api/user/data?t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).then(res => {
       if (isStale) return;
       if (res.data && Object.keys(res.data).length > 0) {
         const d = res.data;
-        if (d.baseCapital !== undefined) setBaseCapital(d.baseCapital);
-        if (d.savingGoal !== undefined) setSavingGoal(d.savingGoal);
-        if (d.recurring) setRecurring(d.recurring);
-        if (d.installments) setInstallments(d.installments);
-        if (d.transactions) setTransactions(d.transactions);
-        if (d.overrides) setOverrides(d.overrides);
-        if (d.hiddenProjections) setHiddenProjections(d.hiddenProjections);
-        if (d.paidStatus) setPaidStatus(d.paidStatus);
-        if (d.customOrders) setCustomOrders(d.customOrders);
+        const dbTs = d.lastSync || 0;
+        
+        // Sadece veritabanındaki veri LOKAL veriden daha yeniyse (veya eşitse ama lokal boşsa) üzerine yaz.
+        if (dbTs > lastSyncTs || (lastSyncTs === 0 && dbTs >= 0)) {
+          if (d.baseCapital !== undefined) setBaseCapital(d.baseCapital);
+          if (d.savingGoal !== undefined) setSavingGoal(d.savingGoal);
+          if (d.recurring) setRecurring(d.recurring);
+          if (d.installments) setInstallments(d.installments);
+          if (d.transactions) setTransactions(d.transactions);
+          if (d.overrides) setOverrides(d.overrides);
+          if (d.hiddenProjections) setHiddenProjections(d.hiddenProjections);
+          if (d.paidStatus) setPaidStatus(d.paidStatus);
+          if (d.customOrders) setCustomOrders(d.customOrders);
+          setLastSyncTs(dbTs);
+        }
       }
       setIsDataLoadedFromDB(true);
+      setDbFetchRan(true);
     }).catch(err => {
       console.error('Failed to load DB data', err);
       setIsDataLoadedFromDB(true);
+      setDbFetchRan(true);
     });
     return () => { isStale = true; };
-  }, [sessionUser?.email]);
+  }, [sessionUser?.email, dbFetchRan, lastSyncTs]);
 
   useEffect(() => {
     if (!isDataLoadedFromDB || !sessionUser?.email) return;
     const saveDataToDB = async () => {
+      const nowTs = Date.now();
+      setLastSyncTs(nowTs);
       const payload = {
         baseCapital, savingGoal, recurring, installments, transactions,
-        overrides, hiddenProjections, paidStatus, customOrders
+        overrides, hiddenProjections, paidStatus, customOrders,
+        lastSync: nowTs
       };
       try {
         await fetch('/api/user/data', {
@@ -297,6 +331,30 @@ export default function FinanceDashboard() {
     if (manualIds.length > 0) setTransactions(prev => prev.filter(t => !manualIds.includes(t.id)));
     setSelectedTxns(new Set());
   };
+
+  const handleTogglePrivacy = () => {
+    if (!isPrivacyMode) {
+      setIsPrivacyMode(true);
+    } else {
+      if (savedPin) { setPinAction('unlock'); setPinInput(''); }
+      else setIsPrivacyMode(false);
+    }
+  };
+
+  const handlePinSubmit = () => {
+    if (pinAction === 'unlock') {
+      if (pinInput === savedPin) { setIsPrivacyMode(false); setPinAction(null); }
+      else alert('Hatalı PIN.');
+    } else if (pinAction === 'set') {
+      if (pinInput.length >= 4) { setSavedPin(pinInput); setPinAction(null); }
+      else alert('PIN en az 4 haneli olmalı.');
+    } else if (pinAction === 'remove') {
+      if (pinInput === savedPin) { setSavedPin(''); setPinAction(null); }
+      else alert('Hatalı PIN.');
+    }
+  };
+
+  const privacyClass = isPrivacyMode ? "filter blur-md select-none pointer-events-none transition-all duration-300" : "transition-all duration-300";
 
   /* ============================================================
      XML EXPORT / IMPORT
@@ -768,24 +826,6 @@ export default function FinanceDashboard() {
 
         accountRow.cells[m] = currentBalance;
       }
-
-      // Add "Dönem Sonu Bakiyesi" (End of Month Balance) row at the bottom
-      const endOfMonthRow = {
-        id: 'sys-end-of-month',
-        name: 'Dönem Sonu Bakiyesi',
-        type: 'income' as const,
-        isRecurring: false,
-        isSystemRow: true,
-        cells: {} as MatrixCellData
-      };
-      
-      for (let m = 0; m < matrixColumns.length; m++) {
-        let flowForThisMonth = netFlows[m] || 0;
-        let originalAccountVal = originalAccountValues[m] || 0;
-        endOfMonthRow.cells[m] = (accountRow.cells[m] || 0) + (flowForThisMonth - originalAccountVal);
-      }
-      
-      matrixRows.push(endOfMonthRow);
     }
 
 
@@ -835,7 +875,7 @@ export default function FinanceDashboard() {
 
     return {
       totalIncome, totalExpense, barData, donutData, allTxns, matrixRows, matrixColumns, activeList: activeListWithStatus, unpaidCount,
-      totalPendingDebts: unpaidTotal, incomeSources, maxMonthlyScale
+      totalPendingDebts: unpaidTotal, incomeSources, maxMonthlyScale, netFlows
     };
   }, [recurring, installments, transactions, overrides, dateRange, hiddenProjections, customOrders, paidStatus, theme, mounted]);
 
@@ -891,6 +931,31 @@ export default function FinanceDashboard() {
      ============================================================ */
   return (
     <div className={bg} onClick={() => { setActiveTxnMenu(null); setIsCalendarOpen(false); setIsActionMenuOpen(false); setIsNotificationsOpen(false); setIsProfileOpen(false); }}>
+
+      {/* PIN Modal Overlay */}
+      {pinAction && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+          <div className={`${card} p-6 w-full max-w-sm flex flex-col gap-4 mx-4 shadow-xl`} onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-indigo-500" />
+              <h3 className={`text-lg font-bold ${title}`}>
+                {pinAction==='unlock' ? 'Gizliliği Kaldır' : pinAction==='set' ? 'Yeni PIN Belirle' : 'PIN Kaldır'}
+              </h3>
+            </div>
+            <p className={`text-sm ${muted}`}>
+              {pinAction==='unlock' ? 'Verileri görmek için mevcut PIN kodunuzu girin.' : pinAction==='set' ? 'Gizlilik modunu açarken kullanılacak en az 4 haneli bir PIN kodu belirleyin.' : 'Mevcut PIN kodunuzu girerek korumayı kaldırın.'}
+            </p>
+            <input type="password" placeholder="****" value={pinInput} maxLength={8} autoFocus
+              onChange={e=>setPinInput(e.target.value.replace(/[^0-9]/g,''))}
+              onKeyDown={e=>e.key==='Enter'&&handlePinSubmit()}
+              className={`w-full px-4 py-3 text-2xl tracking-widest text-center rounded-xl border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 ${title} focus:outline-none focus:border-indigo-500`} />
+            <div className="flex gap-2">
+              <button onClick={()=>setPinAction(null)} className={`flex-1 px-4 py-2.5 rounded-lg font-medium text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors`}>İptal</button>
+              <button onClick={handlePinSubmit} disabled={!pinInput} className="flex-1 px-4 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors">Onayla</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── NAV ── */}
       <div className={`${navBg} sticky top-0 z-40 border-b border-slate-100 dark:border-neutral-800`}>
@@ -961,6 +1026,11 @@ export default function FinanceDashboard() {
               )}
             </div>
 
+            {/* Privacy Toggle */}
+            <button onClick={handleTogglePrivacy} className={`p-2 rounded-full transition-colors ${isPrivacyMode ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-500/20' : `${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white`}`}>
+              {isPrivacyMode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+
             <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white transition-colors`}>
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
@@ -988,6 +1058,15 @@ export default function FinanceDashboard() {
                     <p className={`text-sm font-semibold ${title} truncate`}>{sessionUser?.name || 'Kullanıcı'}</p>
                     <p className={`text-xs ${muted} truncate`}>{sessionUser?.email || ''}</p>
                   </div>
+                  {savedPin ? (
+                    <button onClick={() => { setPinAction('remove'); setPinInput(''); setIsProfileOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-2`}>
+                      <Lock className="w-4 h-4"/> PIN Kaldır
+                    </button>
+                  ) : (
+                    <button onClick={() => { setPinAction('set'); setPinInput(''); setIsProfileOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-2`}>
+                      <Lock className="w-4 h-4"/> PIN Belirle
+                    </button>
+                  )}
                   <button
                     onClick={() => signOut({ callbackUrl: '/login' })}
                     className="w-full flex items-center gap-2 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium"
@@ -1004,7 +1083,7 @@ export default function FinanceDashboard() {
         </div>
       </div>
 
-      <div className="max-w-[1500px] mx-auto p-4 md:p-8 space-y-6">
+      <div className={`max-w-[1500px] mx-auto p-4 md:p-8 space-y-6 ${privacyClass}`}>
 
         {/* ── PAGE HEADER ── */}
         <div className="flex flex-row items-center justify-between gap-4">
@@ -1105,11 +1184,31 @@ export default function FinanceDashboard() {
         {/* ── ROW 1: KPI CARDS ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Balance */}
-          <div className={`${card} p-5 h-36 flex flex-col justify-between`}>
-            <div className={`flex items-center gap-2 ${muted}`}><Wallet className="w-4 h-4" /><span className="text-sm font-medium">Toplam Bakiye</span></div>
+          <div className={`${card} p-5 h-36 flex flex-col justify-between group/base`}>
+            <div className={`flex items-center gap-2 ${muted}`}>
+              <Wallet className="w-4 h-4" />
+              <span className="text-sm font-medium">Toplam Bakiye</span>
+              <button onClick={() => { setIsEditingBase(true); setBaseInput(baseCapital.toString()); }} className="opacity-0 group-hover/base:opacity-100 transition-opacity p-1 ml-auto hover:bg-slate-100 dark:hover:bg-neutral-800 rounded">
+                 <Edit2 className="w-3.5 h-3.5 text-slate-400 hover:text-indigo-500" />
+              </button>
+            </div>
             <div className="flex items-baseline justify-between mt-auto">
-              <h2 className={`text-3xl font-bold tracking-tight ${title}`}>₺{currentNetWorth.toLocaleString('tr-TR',{maximumFractionDigits:0})}</h2>
-              <span className="flex items-center text-emerald-600 dark:text-emerald-500 text-sm font-semibold"><ArrowUpRight className="w-4 h-4"/>12.5%</span>
+              {isEditingBase ? (
+                 <div className="flex flex-col">
+                   <input 
+                     autoFocus 
+                     className={`text-2xl md:text-3xl font-bold bg-transparent border-b border-indigo-500 w-full focus:outline-none ${title} tracking-tight tabular-nums pb-1`}
+                     value={baseInput}
+                     onChange={e => setBaseInput(e.target.value.replace(/[^0-9-]/g, ''))}
+                     onBlur={() => { setBaseCapital(Number(baseInput) || 0); setIsEditingBase(false); }}
+                     onKeyDown={e => { if (e.key === 'Enter') { setBaseCapital(Number(baseInput) || 0); setIsEditingBase(false); } if (e.key === 'Escape') { setIsEditingBase(false); } }}
+                   />
+                   <span className="text-[10px] text-indigo-500 block">Başlangıç Nakit / Kasa</span>
+                 </div>
+              ) : (
+                 <h2 className={`text-3xl font-bold tracking-tight ${title}`}>₺{currentNetWorth.toLocaleString('tr-TR',{maximumFractionDigits:0})}</h2>
+              )}
+              {!isEditingBase && <span className="flex items-center text-emerald-600 dark:text-emerald-500 text-sm font-semibold shrink-0 ml-2"><ArrowUpRight className="w-4 h-4"/>12.5%</span>}
             </div>
           </div>
           {/* Net Profit */}
@@ -1651,6 +1750,49 @@ export default function FinanceDashboard() {
                   </tr>
                 ))}
               </tbody>
+              <tfoot className="border-t-2 border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-neutral-900/50">
+                <tr>
+                  <td className={`sticky left-0 z-10 bg-slate-50/80 dark:bg-neutral-900/50 px-5 py-3.5 font-bold ${title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)]`}>
+                    Aylık Net
+                  </td>
+                  {engineData.matrixColumns.map((m, idx) => {
+                    const v = engineData.netFlows[idx] || 0;
+                    return (
+                      <td key={`net-${m}`} className={`px-4 py-3.5 text-right font-bold tracking-tight ${v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {v >= 0 ? '+' : '-'}₺{Math.abs(v).toLocaleString('tr-TR', {maximumFractionDigits:0})}
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr>
+                  <td className={`sticky left-0 z-10 bg-slate-50/80 dark:bg-neutral-900/50 px-5 py-3.5 font-bold ${title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] border-t border-slate-200/60 dark:border-neutral-800/60`}>
+                    Dönem Başı Nakit (Açılış)
+                  </td>
+                  {engineData.matrixColumns.map((m, idx) => {
+                    let opening = baseCapital;
+                    for (let i = 0; i < idx; i++) opening += (engineData.netFlows[i] || 0);
+                    return (
+                      <td key={`open-${m}`} className={`px-4 py-3.5 text-right font-medium text-slate-500 dark:text-neutral-400 border-t border-slate-200/60 dark:border-neutral-800/60`}>
+                        ₺{opening.toLocaleString('tr-TR', {maximumFractionDigits:0})}
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr>
+                  <td className={`sticky left-0 z-10 bg-slate-50/80 dark:bg-neutral-900/50 px-5 py-3.5 font-bold ${title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] border-t border-slate-200/60 dark:border-neutral-800/60`}>
+                    Kümülatif Bakiye (Tahmini)
+                  </td>
+                  {engineData.matrixColumns.map((m, idx) => {
+                    let cumulative = baseCapital;
+                    for (let i = 0; i <= idx; i++) cumulative += (engineData.netFlows[i] || 0);
+                    return (
+                      <td key={`cum-${m}`} className={`px-4 py-3.5 text-right font-bold ${title} border-t border-slate-200/60 dark:border-neutral-800/60`}>
+                        ₺{cumulative.toLocaleString('tr-TR', {maximumFractionDigits:0})}
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
