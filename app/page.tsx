@@ -22,7 +22,7 @@ import TransactionModal, { TransactionPayload } from '@/components/TransactionMo
 /* ============================================================
    TYPES
    ============================================================ */
-type RecurringItem = { id: string; type: 'income'|'expense'; category: string; name: string; amount: number; color: string; order?: number; dueDay?: number; date?: string; repeatUntil?: string; };
+type RecurringItem = { id: string; type: 'income'|'expense'; category: string; name: string; amount: number; color: string; order?: number; dueDay?: number; date?: string; repeatUntil?: string; isReminder?: boolean; };
 
 export type ReminderItem = {
   id: string;
@@ -238,7 +238,7 @@ export default function FinanceDashboard() {
      HANDLERS
      ============================================================ */
   const handleTransactionSave = (payload: TransactionPayload) => {
-    if (payload.isReminder) {
+    if (payload.isReminder && !payload.isRecurring) {
       setReminders(prev => [...prev, {
         id: `rm-${Date.now()}`, name: payload.description, amount: payload.amount, date: payload.date || new Date().toISOString(), type: payload.type as 'expense' | 'income'
       }]);
@@ -247,7 +247,9 @@ export default function FinanceDashboard() {
         id: `r-${Date.now()}`, type: payload.type === 'income' ? 'income' : 'expense',
         category: payload.description, name: payload.description, amount: payload.amount,
         color: payload.type === 'income' ? '#10b981' : '#f43f5e',
-        dueDay: payload.dueDay
+        dueDay: payload.dueDay,
+        repeatUntil: payload.repeatUntil,
+        isReminder: payload.isReminder
       }]);
     } else if (payload.isInstallment && payload.installmentCount) {
       setInstallments(prev => [...prev, {
@@ -711,31 +713,33 @@ export default function FinanceDashboard() {
         }
 
         if (!isHidden && !effectivelyOutOfBounds && mappedAmt > 0) {
-          // Determine if this recurring expense is already paid this month (dueDay passed)
-          const thisMonthNow = new Date();
-          const isThisMonth = currentD.getMonth() === thisMonthNow.getMonth() && currentD.getFullYear() === thisMonthNow.getFullYear();
-          const isPaidThisMonth = isThisMonth && rec.type === 'expense' && (rec.dueDay || 1) < thisMonthNow.getDate();
-          
-          if (rec.type === 'income') { 
-            totalIncome += mappedAmt; 
-            monthlyIncome[mk] = (monthlyIncome[mk]||0) + mappedAmt;
-            incomeSources[rec.id] = (incomeSources[rec.id]||0) + mappedAmt;
-            if (mIdx !== -1) netFlows[mIdx] += mappedAmt;
-          }
-          else if (isPaidThisMonth) {
-            // Paid this month → track separately (shown as light gray in chart), NOT deducted from balance
-            monthlyBarsPaid[mk] += mappedAmt;
-          }
-          else {
-            // Unpaid → counts toward totalExpense and shown as dark bar
-            totalExpense += mappedAmt;
-            expenseCategories[rec.category] = (expenseCategories[rec.category]||0) + mappedAmt;
-            monthlyBarsUnpaid[mk] += mappedAmt;
-            if (mIdx !== -1) netFlows[mIdx] -= mappedAmt;
-          }
-          // Only push to transaction list if income OR not-yet-paid expense OR it's a non-current month
-          if (rec.type === 'income' || !isPaidThisMonth || !isThisMonth) {
-            allTxns.push({ id: txnId, name: rec.name, type: rec.type, amount: mappedAmt, date: currentD.toISOString(), isRecurringBase: true, avatarPrefix: rec.name.charAt(0) });
+          if (!rec.isReminder) {
+            // Determine if this recurring expense is already paid this month (dueDay passed)
+            const thisMonthNow = new Date();
+            const isThisMonth = currentD.getMonth() === thisMonthNow.getMonth() && currentD.getFullYear() === thisMonthNow.getFullYear();
+            const isPaidThisMonth = isThisMonth && rec.type === 'expense' && (rec.dueDay || 1) < thisMonthNow.getDate();
+            
+            if (rec.type === 'income') { 
+              totalIncome += mappedAmt; 
+              monthlyIncome[mk] = (monthlyIncome[mk]||0) + mappedAmt;
+              incomeSources[rec.id] = (incomeSources[rec.id]||0) + mappedAmt;
+              if (mIdx !== -1) netFlows[mIdx] += mappedAmt;
+            }
+            else if (isPaidThisMonth) {
+              // Paid this month → track separately (shown as light gray in chart), NOT deducted from balance
+              monthlyBarsPaid[mk] += mappedAmt;
+            }
+            else {
+              // Unpaid → counts toward totalExpense and shown as dark bar
+              totalExpense += mappedAmt;
+              expenseCategories[rec.category] = (expenseCategories[rec.category]||0) + mappedAmt;
+              monthlyBarsUnpaid[mk] += mappedAmt;
+              if (mIdx !== -1) netFlows[mIdx] -= mappedAmt;
+            }
+            // Only push to transaction list if income OR not-yet-paid expense OR it's a non-current month
+            if (rec.type === 'income' || !isPaidThisMonth || !isThisMonth) {
+              allTxns.push({ id: txnId, name: rec.name, type: rec.type, amount: mappedAmt, date: currentD.toISOString(), isRecurringBase: true, avatarPrefix: rec.name.charAt(0) });
+            }
           }
         }
       });
@@ -1003,11 +1007,11 @@ export default function FinanceDashboard() {
             </Link>
             
             {/* Tabs */}
-            <div className="hidden sm:flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg">
-               <Link href="/" className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">
+            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0">
+               <Link href="/" className="px-2 sm:px-3 py-1.5 text-[11px] sm:text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">
                  Kokpit
                </Link>
-               <Link href="/notes" className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">
+               <Link href="/notes" className="px-2 sm:px-3 py-1.5 text-[11px] sm:text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">
                  Notlarım
                </Link>
             </div>
@@ -1679,9 +1683,11 @@ export default function FinanceDashboard() {
                   >
                     <td className={`sticky left-0 z-10 ${item.isSystemRow ? 'bg-slate-50 dark:bg-neutral-900/40' : 'bg-white dark:bg-[#09090b]'} px-5 py-4 font-medium ${item.isSystemRow ? 'text-slate-900 dark:text-white font-bold' : title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] ${!item.isSystemRow ? 'group-hover:bg-slate-50/60 dark:group-hover:bg-neutral-900/30' : ''} transition-colors`}>
                       <div className="flex items-center gap-2 group/name">
-                        {item.type==='income'
-                          ? <ArrowUpRight className={`w-3.5 h-3.5 ${item.isSystemRow ? 'text-indigo-500' : 'text-emerald-500'} shrink-0`}/>
-                          : <ArrowDownRight className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
+                        {item.baseItem?.isReminder 
+                          ? <Bell className="w-3.5 h-3.5 text-amber-500 shrink-0"/>
+                          : item.type==='income'
+                            ? <ArrowUpRight className={`w-3.5 h-3.5 ${item.isSystemRow ? 'text-indigo-500' : 'text-emerald-500'} shrink-0`}/>
+                            : <ArrowDownRight className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
                         
                         {/* Editable Rule Names (only for recurring base) */}
                         {item.isRecurring && editingRuleId === item.baseItem.id ? (
@@ -1696,7 +1702,8 @@ export default function FinanceDashboard() {
                             onClick={()=>{if(item.isRecurring){setEditingRuleId(item.baseItem.id);setRuleNameValue(item.name);}}} 
                             className={`transition-colors truncate block ${item.isRecurring ? 'cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400' : ''}`}
                           >
-                            {item.name}
+                            {item.name} 
+                            {item.baseItem?.isReminder && <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded ml-1.5 font-bold uppercase overflow-hidden">Hatırlatıcı</span>}
                           </span>
                         )}
 

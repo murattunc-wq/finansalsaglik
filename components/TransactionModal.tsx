@@ -26,7 +26,8 @@ export default function TransactionModal({
   onSave: (data: TransactionPayload) => void;
 }) {
   const [activeTab, setActiveTab] = useState<'expense' | 'income' | 'transfer'>('expense');
-  const [paymentType, setPaymentType] = useState<'one-time' | 'recurring' | 'reminder'>('one-time');
+  const [paymentType, setPaymentType] = useState<'one-time' | 'recurring'>('one-time');
+  const [isReminder, setIsReminder] = useState(false);
   
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -60,8 +61,8 @@ export default function TransactionModal({
         isInstallment: paymentType === 'one-time' && isInstallment && activeTab === 'expense',
         installmentCount: (paymentType === 'one-time' && isInstallment && activeTab === 'expense') ? installmentCount : undefined,
         dueDay: (activeTab === 'expense' && (paymentType === 'recurring' || isInstallment)) ? dueDay : undefined,
-        date: (paymentType === 'one-time' || paymentType === 'reminder') ? new Date(transactionDate).toISOString() : undefined,
-        isReminder: paymentType === 'reminder'
+        date: paymentType === 'one-time' ? new Date(transactionDate).toISOString() : undefined,
+        isReminder: isReminder
       });
       setIsSaving(false);
       
@@ -69,6 +70,7 @@ export default function TransactionModal({
       setAmount('');
       setDescription('');
       setIsInstallment(false);
+      setIsReminder(false);
       setPaymentType('one-time');
       setDueDay(1);
       const d = new Date();
@@ -159,7 +161,7 @@ export default function TransactionModal({
             {/* Recurrence Type Toggle */}
             <div className="space-y-1.5 pt-2">
                <label className="text-sm font-medium text-slate-700 leading-none block mb-2">İşlem Tipi & Sıklığı</label>
-               <div className="grid grid-cols-3 gap-2 sm:gap-3">
+               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div 
                     onClick={() => { setPaymentType('one-time'); setRepeatUntil(''); setIsInstallment(false); }}
                     className={`cursor-pointer border rounded-lg p-2.5 sm:p-3 flex flex-col gap-1.5 sm:gap-2 transition-all ${paymentType === 'one-time' ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300'}`}
@@ -180,21 +182,32 @@ export default function TransactionModal({
                        <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">Aylık otomatik işler.</p>
                      </div>
                   </div>
-                  <div 
-                    onClick={() => { setPaymentType('reminder'); setRepeatUntil(''); setIsInstallment(false); }}
-                    className={`cursor-pointer border rounded-lg p-2.5 sm:p-3 flex flex-col gap-1.5 sm:gap-2 transition-all ${paymentType === 'reminder' ? 'border-amber-600 bg-amber-50/50 ring-1 ring-amber-600' : 'border-slate-200 hover:border-slate-300'}`}
-                  >
-                     <Bell className={`w-4 h-4 sm:w-5 sm:h-5 ${paymentType === 'reminder' ? 'text-amber-600' : 'text-slate-400'}`} />
-                     <div>
-                       <p className={`text-xs sm:text-sm font-medium leading-none ${paymentType === 'reminder' ? 'text-amber-900' : 'text-slate-700'}`}>Hatırlatıcı</p>
-                       <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">Bakiyeden düşmez.</p>
-                     </div>
+               </div>
+            </div>
+
+            {/* Reminder Toggle */}
+            <div className="bg-amber-50/50 border border-amber-200/60 rounded-lg overflow-hidden transition-all duration-300">
+               <div 
+                  className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-amber-100/30"
+                  onClick={() => setIsReminder(!isReminder)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white rounded-md text-amber-600 border border-amber-200 shadow-sm">
+                      <Bell className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-amber-900">Sadece Hatırlatıcı (Bakiye Etkilemez)</p>
+                      <p className="text-xs text-amber-700/70 mt-0.5">Ödendi işaretlenene kadar bakiyeden düşmez.</p>
+                    </div>
+                  </div>
+                  <div className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 ${isReminder ? 'bg-amber-500' : 'bg-slate-300'}`}>
+                    <span className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${isReminder ? 'translate-x-4' : 'translate-x-0'}`} />
                   </div>
                </div>
             </div>
 
-            {/* Conditional: Date Target for One-Time OR Reminder */}
-            {(paymentType === 'one-time' || paymentType === 'reminder') && (
+            {/* Conditional: Date Target for One-Time */}
+            {paymentType === 'one-time' && (
               <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 pt-2">
                 <label className="text-sm font-medium text-slate-700 leading-none">
                   İşlem Tarihi
