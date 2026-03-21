@@ -11,6 +11,7 @@ import {
   Plus, CalendarDays, Wallet, TrendingUp, FileText,
   MoreVertical, Trash2, Edit2, Download, Upload
 } from 'lucide-react';
+import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { DayPicker } from 'react-day-picker';
 import { format, isWithinInterval, parseISO, parse, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
@@ -897,9 +898,20 @@ export default function FinanceDashboard() {
           
           {/* Left: Logo and Search */}
           <div className="flex items-center gap-3 md:gap-4 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0">
+            <Link href="/" className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity">
               <span className="text-white dark:text-black text-sm font-bold">₺</span>
+            </Link>
+            
+            {/* Tabs */}
+            <div className="hidden sm:flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg">
+               <Link href="/" className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">
+                 Kokpit
+               </Link>
+               <Link href="/notes" className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">
+                 Notlarım
+               </Link>
             </div>
+            
             {/* Search Input */}
             <div className="relative w-full max-w-[160px] sm:max-w-xs transition-all">
               <Search className={`absolute left-3 top-2.5 h-4 w-4 ${muted}`} />
