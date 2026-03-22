@@ -554,19 +554,19 @@ export default function NotesPage() {
                         <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       </div>
                       <div>
-                        <p className={`text-sm font-medium ${ttl}`}>Maaş yattı</p>
-                        <p className={`text-xs ${muted} mt-0.5`}>Hesabınıza 130.000 TL transfer edildi.</p>
+                        <p className={`text-sm font-medium ${ttl}`}>{t('Maaş yattı')}</p>
+                        <p className={`text-xs ${muted} mt-0.5`}>{t('Hesabınıza 130.000 TL transfer edildi.')}</p>
                       </div>
                     </div>
                   </div>
 
                   {savedPin ? (
                     <button onClick={() => { setPinAction('remove'); setPinInput(''); setIsProfileOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-3`}>
-                      <Lock className="w-4 h-4"/> PIN Kaldır
+                      <Lock className="w-4 h-4"/> {t('PIN Kaldır')}
                     </button>
                   ) : (
                     <button onClick={() => { setPinAction('set'); setPinInput(''); setIsProfileOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-3`}>
-                      <Lock className="w-4 h-4"/> PIN Belirle
+                      <Lock className="w-4 h-4"/> {t('PIN Belirle')}
                     </button>
                   )}
 
@@ -580,7 +580,7 @@ export default function NotesPage() {
 
                   <Link href="/faq" onClick={() => setIsProfileOpen(false)} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-3`}>
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-                    Yardım / SSS
+                    {t('Yardım / SSS')}
                   </Link>
 
                   <button onClick={()=>signOut({callbackUrl:'/login'})} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium">
@@ -727,8 +727,8 @@ export default function NotesPage() {
                           <tr key={`${month}-${i}`}
                           className={`group border-b border-slate-100 dark:border-neutral-800/60 transition-colors ${isCurrent?'bg-amber-50 dark:bg-[#1f1a0d]':'bg-white dark:bg-[#09090b]'} hover:bg-slate-50 dark:hover:bg-neutral-900/50 ${i===0?'border-t-2 border-t-slate-200 dark:border-t-neutral-700':''}`}>
                             {i===0 && (
-                              <td rowSpan={monthEntries.length} className={`sticky left-0 z-10 px-1 sm:px-5 py-3 align-middle bg-inherit`}>
-                                <div className="flex flex-col items-center sm:items-start gap-1 w-14 sm:w-16 mx-auto sm:mx-0">
+                              <td rowSpan={monthEntries.length} className={`sticky left-0 z-10 px-2 sm:px-5 py-3 align-middle bg-inherit`}>
+                                <div className="flex flex-col items-center sm:items-start gap-1 w-16 sm:w-20 mx-auto sm:mx-0 ml-1 sm:ml-0">
                                   <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2.5 py-1 rounded-full whitespace-nowrap ${total>=0?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'}`}>
                                     {t(MONTH_LABEL[month]||`Ay ${month}`)}
                                   </span>
@@ -737,11 +737,11 @@ export default function NotesPage() {
                               </td>
                             )}
                             <td className={`sticky left-16 sm:left-28 z-10 px-2 sm:px-5 py-3 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] bg-inherit`}>
-                              <div className="flex items-center gap-1 sm:gap-2 truncate max-w-[80px] sm:max-w-[200px]">
+                              <div className="flex items-center gap-1 sm:gap-2 max-w-[120px] sm:max-w-[250px]">
                                 {calcType(entry.type)==='income'?<TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>:<TrendingDown className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
-                                <span className={`text-sm ${ttl}`}>{entry.label}</span>
+                                <span className={`text-sm ${ttl} truncate block`}>{entry.label}</span>
                                 {STATUS_BADGE_MAP(entry.type, t) && (
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${STATUS_BADGE_MAP(entry.type, t)!.cls}`}>
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0 ${STATUS_BADGE_MAP(entry.type, t)!.cls}`}>
                                     {STATUS_BADGE_MAP(entry.type, t)!.label}
                                   </span>
                                 )}

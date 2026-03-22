@@ -1250,19 +1250,19 @@ export default function FinanceDashboard() {
                         <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       </div>
                       <div>
-                        <p className={`text-sm font-medium ${title}`}>Maaş yattı</p>
-                        <p className={`text-xs ${muted} mt-0.5`}>Hesabınıza 130.000 TL transfer edildi.</p>
+                        <p className={`text-sm font-medium ${title}`}>{t('Maaş yattı')}</p>
+                        <p className={`text-xs ${muted} mt-0.5`}>{t('Hesabınıza 130.000 TL transfer edildi.')}</p>
                       </div>
                     </div>
                   </div>
 
                   {savedPin ? (
                     <button onClick={() => { setPinAction('remove'); setPinInput(''); setIsProfileOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-3`}>
-                      <Lock className="w-4 h-4"/> PIN Kaldır
+                      <Lock className="w-4 h-4"/> {t('PIN Kaldır')}
                     </button>
                   ) : (
                     <button onClick={() => { setPinAction('set'); setPinInput(''); setIsProfileOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-3`}>
-                      <Lock className="w-4 h-4"/> PIN Belirle
+                      <Lock className="w-4 h-4"/> {t('PIN Belirle')}
                     </button>
                   )}
 
@@ -1276,7 +1276,7 @@ export default function FinanceDashboard() {
 
                   <Link href="/faq" onClick={() => setIsProfileOpen(false)} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-3`}>
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-                    Yardım / SSS
+                    {t('Yardım / SSS')}
                   </Link>
 
                   <button
@@ -1446,7 +1446,7 @@ export default function FinanceDashboard() {
               <h2 className={`text-3xl font-bold tracking-tight ${title}`}>₺{engineData.totalPendingDebts.toLocaleString('tr-TR',{maximumFractionDigits:0})}</h2>
               {engineData.unpaidCount > 0 ? (
                 <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-100 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
-                  {engineData.unpaidCount} bekleyen
+                  {engineData.unpaidCount} {t('bekleyen')}
                 </span>
               ) : (
                 <span className="flex items-center text-emerald-600 dark:text-emerald-400 text-xs font-semibold shrink-0">Tümü ödendi!</span>
@@ -1650,7 +1650,7 @@ export default function FinanceDashboard() {
                           <div className={`hidden sm:flex w-9 h-9 shrink-0 rounded-full items-center justify-center font-bold text-sm ${txn.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
                             {txn.avatarPrefix}
                           </div>
-                          <span className={`font-semibold ${title} truncate line-clamp-1`}>{txn.name}</span>
+                          <span className={`font-semibold ${title} truncate max-w-[120px] sm:max-w-xs block`}>{txn.name}</span>
                         </div>
                       </td>
                       <td className={`px-2 py-3.5 ${muted} text-xs font-medium whitespace-nowrap text-left`}>{format(new Date(txn.date),'dd MMM yyyy',{locale: locale === 'en' ? enUS : tr})}</td>
