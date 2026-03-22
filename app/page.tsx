@@ -769,8 +769,7 @@ export default function FinanceDashboard() {
         }
 
         if (!isHidden && !effectivelyOutOfBounds && mappedAmt > 0) {
-          if (!rec.isReminder) {
-            // Determine if this recurring expense is already paid this month (dueDay passed)
+          // Determine if this recurring expense is already paid this month (dueDay passed)
             const thisMonthNow = new Date();
             const isThisMonth = currentD.getMonth() === thisMonthNow.getMonth() && currentD.getFullYear() === thisMonthNow.getFullYear();
             const isPaidThisMonth = isThisMonth && rec.type === 'expense' && (rec.dueDay || 1) < thisMonthNow.getDate();
@@ -795,7 +794,6 @@ export default function FinanceDashboard() {
             // Only push to transaction list if income OR not-yet-paid expense OR it's a non-current month
             if (rec.type === 'income' || !isPaidThisMonth || !isThisMonth) {
               allTxns.push({ id: txnId, name: rec.name, type: rec.type, amount: mappedAmt, date: currentD.toISOString(), isRecurringBase: true, avatarPrefix: rec.name.charAt(0) });
-            }
           }
         }
       });
