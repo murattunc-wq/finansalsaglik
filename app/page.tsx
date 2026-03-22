@@ -306,7 +306,17 @@ export default function FinanceDashboard() {
     
     // Auto-open calendar link if it's a reminder
     if (shouldDownloadIcs) {
-      downloadICSFile(payload.description, payload.date || new Date().toISOString(), payload.amount);
+      const d = new Date(payload.date || new Date().toISOString());
+      const dStr = format(d, 'yyyyMMdd');
+      const nextD = new Date(d); nextD.setDate(d.getDate() + 1);
+      const endStr = format(nextD, 'yyyyMMdd');
+      const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: `Ödeme: ${payload.description}`,
+        dates: `${dStr}/${endStr}`,
+        details: `Finansal Kokpit tarafından planlanmış ödeme hatırlatıcısı. Öngörülen tutar: ₺${payload.amount}`
+      });
+      window.open(`https://calendar.google.com/calendar/render?${params.toString()}`, '_blank');
     }
     
     setIsModalOpen(false);
@@ -863,6 +873,42 @@ export default function FinanceDashboard() {
             matrixRowsMap.set(mapKey, { id: mapKey, name: t.name, type: t.type, isRecurring: false, cells: {} });
           }
           matrixRowsMap.get(mapKey)!.cells[mIdx] = (matrixRowsMap.get(mapKey)!.cells[mIdx] || 0) + (t.amount || 0); // Enforce number mapping properly
+        }
+      }
+    });
+
+    reminders.forEach(t => {
+      const td = parseISO(t.date);
+      if (td >= startOfMonth(startD) && td <= endOfMonth(endD)) {
+        transactionsInRange.push({ id: `rem-${t.id}`, name: t.name, type: t.type, amount: t.amount, date: t.date, avatarPrefix: t.name.charAt(0) });
+        const mk = format(td, 'MMM', { locale: tr });
+        // Find month index for matrix
+        let mIdx = -1;
+        let dCheck = startOfMonth(startD);
+        for(let i=0; i<matrixColumns.length; i++) {
+          if (format(dCheck, 'MMM yy', { locale: tr }).toUpperCase() === format(td, 'MMM yy', { locale: tr }).toUpperCase()) { mIdx = i; break; }
+          dCheck = addMonths(dCheck, 1);
+        }
+
+        if (t.type === 'income') {
+          totalIncome += t.amount;
+          if (monthlyIncome[mk] !== undefined) monthlyIncome[mk] += t.amount;
+          incomeSources[t.id] = (incomeSources[t.id]||0) + t.amount;
+          if (mIdx !== -1) netFlows[mIdx] += t.amount;
+        }
+        if (t.type === 'expense') {
+          totalExpense += t.amount;
+          expenseCategories['Tek Seferlik (Hatırlatıcı)'] = (expenseCategories['Tek Seferlik (Hatırlatıcı)']||0) + t.amount;
+          if (monthlyBarsUnpaid[mk] !== undefined) monthlyBarsUnpaid[mk] += t.amount;
+          if (mIdx !== -1) netFlows[mIdx] -= t.amount;
+        }
+
+        if (mIdx !== -1) {
+          const mapKey = `rem-${t.name}`;
+          if (!matrixRowsMap.has(mapKey)) {
+            matrixRowsMap.set(mapKey, { id: mapKey, name: t.name, type: t.type, isRecurring: false, baseItem: { ...t, isReminder: true }, cells: {} });
+          }
+          matrixRowsMap.get(mapKey)!.cells[mIdx] = (matrixRowsMap.get(mapKey)!.cells[mIdx] || 0) + (t.amount || 0);
         }
       }
     });
@@ -1646,7 +1692,7 @@ export default function FinanceDashboard() {
                               if(item.type === 'reminder') return;
                               e.stopPropagation();setEditingDueDay({id:item.id, type:item.type as any});setDueDayEditValue(item.dueDay||1);
                             }}
-                            className={`inline-block mr-2 w-5 h-5 flex items-center justify-center text-[10px] leading-5 font-bold rounded ${item.type !== 'reminder' ? 'cursor-pointer hover:ring-1 hover:ring-indigo-500' : ''} transition-all ${item.isPaid ? 'bg-slate-100 text-slate-400 dark:bg-neutral-900 dark:text-neutral-500' : item.type === 'reminder' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-500' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'}`}>
+                            className={`inline-flex mr-2 w-5 h-5 items-center justify-center text-[10px] leading-5 font-bold rounded ${item.type !== 'reminder' ? 'cursor-pointer hover:ring-1 hover:ring-indigo-500' : ''} transition-all ${item.isPaid ? 'bg-slate-100 text-slate-400 dark:bg-neutral-900 dark:text-neutral-500' : item.type === 'reminder' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-500' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'}`}>
                             {item.dueDay}
                           </span>
                         )}
