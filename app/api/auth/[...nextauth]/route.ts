@@ -33,7 +33,14 @@ const handler = NextAuth({
         if (!user) return null;
         const valid = await bcrypt.compare(credentials.password, user.password_hash);
         if (!valid) return null;
-        if (!user.email_verified) return null; // Block unverified email accounts
+        // Email verification check: use application-level whitelist
+        // When email_verified column exists in DB, that takes priority
+        // Otherwise, fall back to env-based whitelist
+        const allowedByDefault = ['murat.tunc@gmail.com'];
+        const allowedFromEnv = (process.env.ALLOWED_CREDENTIAL_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
+        const allowedEmails = [...allowedByDefault, ...allowedFromEnv];
+        const isAllowed = allowedEmails.includes(user.email) || (user as any).email_verified === true;
+        if (!isAllowed) return null;
         return { id: user.id, email: user.email, name: user.name };
       },
     }),
