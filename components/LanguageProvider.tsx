@@ -172,7 +172,19 @@ const dictionary: Record<string, Record<Locale, string>> = {
   "Profil": { tr: "Profil", en: "Profile" },
   "PIN Doğrulama": { tr: "PIN Doğrulama", en: "PIN Verification" },
   "Onayla": { tr: "Onayla", en: "Confirm" },
-  "Gizlilik Modu": { tr: "Gizlilik Modu", en: "Privacy Mode" }
+  "Gizlilik Modu": { tr: "Gizlilik Modu", en: "Privacy Mode" },
+  "Yerleşik gelir kelimeleri": { tr: "Yerleşik gelir kelimeleri", en: "Built-in income keywords" },
+  "Gizlilik PIN Kodu": { tr: "Gizlilik PIN Kodu", en: "Privacy PIN Code" },
+  "Ekranı kilitleyip kilidi açmak için": { tr: "Ekranı kilitleyip kilidi açmak için", en: "To lock and unlock the screen" },
+  "Çıkış Yap": { tr: "Çıkış Yap", en: "Log Out" },
+  "Ödenecek": { tr: "Ödenecek", en: "To be paid" },
+  "Gelecek Ödeme": { tr: "Gelecek Ödeme", en: "Future Payment" },
+  "Ödeme": { tr: "Ödeme", en: "Payment" },
+  "borcu": { tr: "borcu", en: "debt" },
+  "vadeli": { tr: "vadeli", en: "term" },
+  "Henüz özel kural eklenmedi": { tr: "Henüz özel kural eklenmedi", en: "No custom rules added yet" },
+  "Henüz aylık veri tespit edilemedi.": { tr: "Henüz aylık veri tespit edilemedi.", en: "No monthly data detected yet." },
+  "Ay adını ayrı bir satıra yazın:": { tr: "Ay adını ayrı bir satıra yazın:", en: "Write the month name on a new line:" }
 };
 
 interface LanguageContextProps {

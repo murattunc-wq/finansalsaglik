@@ -1179,8 +1179,8 @@ export default function FinanceDashboard() {
                 {isNotificationsOpen && (
                   <div onClick={e => e.stopPropagation()} className={`absolute right-0 top-full mt-2 w-72 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 overflow-hidden z-50`}>
                     <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800 flex justify-between items-center">
-                      <h3 className={`text-sm font-semibold ${title}`}>Bildirimler</h3>
-                      <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 Yeni</span>
+                      <h3 className={`text-sm font-semibold ${title}`}>{t('Bildirimler')}</h3>
+                      <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 {t('Yeni')}</span>
                     </div>
                     <div className="p-4 flex flex-col gap-3">
                       <div className="flex gap-3 items-start">
@@ -1242,8 +1242,8 @@ export default function FinanceDashboard() {
 
                   <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800">
                     <div className="flex justify-between items-center mb-3">
-                      <h3 className={`text-xs font-semibold ${title} uppercase tracking-wider`}>Bildirimler</h3>
-                      <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 Yeni</span>
+                      <h3 className={`text-xs font-semibold ${title} uppercase tracking-wider`}>{t('Bildirimler')}</h3>
+                      <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 {t('Yeni')}</span>
                     </div>
                     <div className="flex gap-3 items-start">
                       <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
@@ -1286,7 +1286,7 @@ export default function FinanceDashboard() {
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                     </svg>
-                    Çıkış Yap
+                    {t('Çıkış Yap')}
                   </button>
                 </div>
               )}
@@ -1562,7 +1562,7 @@ export default function FinanceDashboard() {
             {/* Total shown here instead of overlapping center */}
             <div className={`text-center -mt-2 mb-3`}>
               <span className={`text-xl font-bold ${title}`}>₺{(engineData.totalExpense/1000).toFixed(1)}k</span>
-              <span className={`text-xs ${muted} ml-1`}>toplam</span>
+              <span className={`text-xs ${muted} ml-1`}>{t('toplam')}</span>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -1650,10 +1650,10 @@ export default function FinanceDashboard() {
                           <div className={`hidden sm:flex w-9 h-9 shrink-0 rounded-full items-center justify-center font-bold text-sm ${txn.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
                             {txn.avatarPrefix}
                           </div>
-                          <span className={`font-semibold ${title} truncate`}>{txn.name}</span>
+                          <span className={`font-semibold ${title} truncate line-clamp-1`}>{txn.name}</span>
                         </div>
                       </td>
-                      <td className={`px-2 py-3.5 ${muted} text-xs font-medium whitespace-nowrap text-left`}>{format(new Date(txn.date),'dd MMM yyyy',{locale:tr})}</td>
+                      <td className={`px-2 py-3.5 ${muted} text-xs font-medium whitespace-nowrap text-left`}>{format(new Date(txn.date),'dd MMM yyyy',{locale: locale === 'en' ? enUS : tr})}</td>
                       <td className={`hidden sm:table-cell px-5 py-3.5 text-left`}>
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${txn.type==='income'?'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
                           {txn.type==='income'?'Gelir':'Gider'}
@@ -1778,17 +1778,17 @@ export default function FinanceDashboard() {
                         {item.type==='installment' ? (
                           <>
                             <p className={`text-sm font-bold ${title}`}>₺{item.remaining?.toLocaleString('tr-TR',{maximumFractionDigits:0})}</p>
-                            <p className={`text-xs ${muted} mt-0.5`}>Kalan</p>
+                            <p className={`text-xs ${muted} mt-0.5`}>{t('Kalan')}</p>
                           </>
                         ) : item.type === 'reminder' ? (
                           <>
-                            <p className={`text-sm font-bold ${title} flex items-center justify-end gap-1`}><Bell className="w-3.5 h-3.5 text-amber-500"/> Hatırlatıcı</p>
-                            <p className={`text-xs ${muted} mt-0.5 whitespace-nowrap`}>İşlem</p>
+                            <p className={`text-sm font-bold ${title} flex items-center justify-end gap-1`}><Bell className="w-3.5 h-3.5 text-amber-500"/> {t('Hatırlatıcı')}</p>
+                            <p className={`text-xs ${muted} mt-0.5 whitespace-nowrap`}>{t('İşlem')}</p>
                           </>
                         ) : (
                           <>
-                            <p className={`text-sm font-bold ${title}`}>Düzenli</p>
-                            <p className={`text-xs ${muted} mt-0.5`}>Tür</p>
+                            <p className={`text-sm font-bold ${title}`}>{t('Düzenli')}</p>
+                            <p className={`text-xs ${muted} mt-0.5`}>{t('Tür')}</p>
                           </>
                         )}
                       </div>

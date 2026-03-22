@@ -546,8 +546,8 @@ export default function NotesPage() {
 
                   <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800">
                     <div className="flex justify-between items-center mb-3">
-                      <h3 className={`text-xs font-semibold ${ttl} uppercase tracking-wider`}>Bildirimler</h3>
-                      <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 Yeni</span>
+                      <h3 className={`text-xs font-semibold ${ttl} uppercase tracking-wider`}>{t('Bildirimler')}</h3>
+                      <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 {t('Yeni')}</span>
                     </div>
                     <div className="flex gap-3 items-start">
                       <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
@@ -584,7 +584,7 @@ export default function NotesPage() {
                   </Link>
 
                   <button onClick={()=>signOut({callbackUrl:'/login'})} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium">
-                    <Trash2 className="w-4 h-4"/> Çıkış Yap
+                    <Trash2 className="w-4 h-4"/> {t('Çıkış Yap')}
                   </button>
                 </div>
               )}
@@ -633,7 +633,7 @@ export default function NotesPage() {
                 <div className="flex items-center gap-2">
                   <Settings2 className="w-4 h-4 text-slate-400"/>
                   <span className={`font-semibold text-sm ${ttl}`}>{t('Format Kuralları')}</span>
-                  {customRules.length>0 && <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 px-2 py-0.5 rounded-full">{customRules.length} kural</span>}
+                  {customRules.length>0 && <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 px-2 py-0.5 rounded-full">{customRules.length} {t('kural')}</span>}
                 </div>
                 {rulesOpen?<ChevronUp className="w-4 h-4 text-slate-400"/>:<ChevronDown className="w-4 h-4 text-slate-400"/>}
               </button>
@@ -642,12 +642,11 @@ export default function NotesPage() {
                   <div className="flex items-start gap-2.5 p-3 bg-slate-50 dark:bg-neutral-900 rounded-lg">
                     <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"/>
                     <p className={`text-xs ${muted} leading-relaxed`}>
-                      Notlarınızdaki kelimelerin gelir mi gider mi sayılacağını tanımlayın.
-                      Özel kurallar yerleşik kurallara göre önceliklidir.
+                      {t('Notlarınızdaki kelimelerin gelir mi gider mi sayılacağını tanımlayın. Özel kurallar yerleşik kurallara göre önceliklidir.')}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <input type="text" placeholder="anahtar kelime..." value={newKw}
+                    <input type="text" placeholder={t('anahtar kelime...')} value={newKw}
                       onChange={e=>setNewKw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addRule()}
                       className={`flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#18181b] ${ttl} focus:outline-none focus:border-indigo-400 transition-colors`}/>
                     <div className="flex flex-wrap rounded-lg overflow-hidden border border-slate-200 dark:border-neutral-800 shrink-0 w-full sm:w-auto">
@@ -677,9 +676,9 @@ export default function NotesPage() {
                         </div>
                       ))}
                     </div>
-                  ) : <p className={`text-xs ${muted} text-center py-2`}>Henüz özel kural eklenmedi</p>}
+                  ) : <p className={`text-xs ${muted} text-center py-2`}>{t('Henüz özel kural eklenmedi')}</p>}
                   <div className="pt-2 border-t border-slate-100 dark:border-neutral-800">
-                    <p className={`text-xs font-medium ${muted} mb-2`}>Yerleşik gelir kelimeleri:</p>
+                    <p className={`text-xs font-medium ${muted} mb-2`}>{t('Yerleşik gelir kelimeleri')}:</p>
                     <div className="flex flex-wrap gap-1.5">
                       {BUILTIN_INCOME_KW.map(kw=><span key={kw} className="text-[11px] font-mono bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded">{kw}</span>)}
                     </div>
@@ -688,13 +687,13 @@ export default function NotesPage() {
                   {/* PIN Settings Area */}
                   <div className="pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between mt-1">
                     <div>
-                      <p className={`text-sm font-semibold ${ttl}`}>Gizlilik PIN Kodu</p>
-                      <p className={`text-xs ${muted}`}>Ekranı kilitleyip kilidi açmak için</p>
+                      <p className={`text-sm font-semibold ${ttl}`}>{t('Gizlilik PIN Kodu')}</p>
+                      <p className={`text-xs ${muted}`}>{t('Ekranı kilitleyip kilidi açmak için')}</p>
                     </div>
                     {savedPin ? (
-                      <button onClick={()=>{setPinAction('remove');setPinInput('');}} className="px-3 py-1.5 text-xs font-semibold bg-rose-100 text-rose-600 hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/30 rounded transition-colors">PIN&apos;i Kaldır</button>
+                      <button onClick={()=>{setPinAction('remove');setPinInput('');}} className="px-3 py-1.5 text-xs font-semibold bg-rose-100 text-rose-600 hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/30 rounded transition-colors">{t('PIN Kaldır')}</button>
                     ) : (
-                      <button onClick={()=>{setPinAction('set');setPinInput('');}} className="px-3 py-1.5 text-xs font-semibold bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-400 dark:hover:bg-indigo-500/30 rounded transition-colors">PIN Belirle</button>
+                      <button onClick={()=>{setPinAction('set');setPinInput('');}} className="px-3 py-1.5 text-xs font-semibold bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-400 dark:hover:bg-indigo-500/30 rounded transition-colors">{t('PIN Belirle')}</button>
                     )}
                   </div>
                 </div>
@@ -731,7 +730,7 @@ export default function NotesPage() {
                               <td rowSpan={monthEntries.length} className={`sticky left-0 z-10 px-1 sm:px-5 py-3 align-middle bg-inherit`}>
                                 <div className="flex flex-col items-center sm:items-start gap-1 w-14 sm:w-16 mx-auto sm:mx-0">
                                   <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2.5 py-1 rounded-full whitespace-nowrap ${total>=0?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'}`}>
-                                    {MONTH_LABEL[month]||t(`Ay ${month}`)}
+                                    {t(MONTH_LABEL[month]||`Ay ${month}`)}
                                   </span>
                                   {isCurrent && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">● Bu Ay</span>}
                                 </div>
@@ -748,13 +747,13 @@ export default function NotesPage() {
                                 )}
                               </div>
                             </td>
-                            <td className="px-5 py-3 text-right">
+                            <td className="px-5 py-3 text-right whitespace-nowrap">
                               <span className={`text-sm font-medium tabular-nums ${calcType(entry.type)==='income'?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
                                 {calcType(entry.type)==='expense'?'-':'+'}₺{entry.amount.toLocaleString('tr-TR')}
                               </span>
                             </td>
                             {i===0 && (
-                              <td rowSpan={monthEntries.length} className="px-5 py-3 text-right align-middle">
+                              <td rowSpan={monthEntries.length} className="px-5 py-3 text-right align-middle whitespace-nowrap">
                                 <span className={`text-base font-bold tabular-nums ${total>=0?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
                                   {total>=0?'+':'-'}₺{Math.abs(total).toLocaleString('tr-TR')}
                                 </span>
@@ -768,7 +767,7 @@ export default function NotesPage() {
                       <tr className="border-t-2 border-slate-200 dark:border-neutral-700">
                         <td colSpan={2} className={`sticky left-0 z-20 bg-slate-50/80 dark:bg-neutral-900/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] px-5 py-3.5 text-sm font-bold ${ttl}`}>{t('Genel Toplam')}</td>
                         <td className="px-5 py-3.5 bg-slate-50/80 dark:bg-neutral-900/50"/>
-                        <td className="px-5 py-3.5 text-right bg-slate-50/80 dark:bg-neutral-900/50">
+                        <td className="px-5 py-3.5 text-right bg-slate-50/80 dark:bg-neutral-900/50 whitespace-nowrap">
                           {(()=>{
                             const g = allEntries.reduce((s,e)=>s+(calcType(e.type)==='income'?e.amount:-e.amount),0);
                             return <span className={`text-base font-bold tabular-nums ${g>=0?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}`}>
@@ -785,8 +784,8 @@ export default function NotesPage() {
 
             {sortedMonths.length===0 && notes.length>10 && (
               <div className={`${card} p-6 text-center`}>
-                <p className={`text-sm ${muted}`}>Henüz aylık veri tespit edilemedi.</p>
-                <p className={`text-xs ${muted} mt-1`}>Ay adını ayrı bir satıra yazın: <code className="bg-slate-100 dark:bg-neutral-800 px-1 rounded">Nisan</code></p>
+                <p className={`text-sm ${muted}`}>{t('Henüz aylık veri tespit edilemedi.')}</p>
+                <p className={`text-xs ${muted} mt-1`}>{t('Ay adını ayrı bir satıra yazın:')} <code className="bg-slate-100 dark:bg-neutral-800 px-1 rounded">Nisan</code></p>
               </div>
             )}
           </div>
