@@ -1721,7 +1721,7 @@ export default function FinanceDashboard() {
               <div className="flex justify-between items-center mb-5">
                 <div>
                   <h3 className={`font-bold text-base tracking-tight ${title}`}>Aktif Taksitler & Giderler</h3>
-                  <p className={`text-sm ${muted} mt-0.5`}>Toplam {engineData.activeList.length} aktif yükümlülük</p>
+                  <p className={`text-sm ${muted} mt-0.5`}>Toplam {engineData.activeList.filter(i => !i.isPaid).length} aktif yükümlülük</p>
                 </div>
                 <button onClick={()=>setIsModalOpen(true)} className={`flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-neutral-700 rounded-md text-xs font-medium ${title} hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors`}>
                   <Plus className="w-3.5 h-3.5"/> Ekle
