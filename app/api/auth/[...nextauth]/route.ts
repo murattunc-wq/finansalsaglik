@@ -10,6 +10,7 @@ interface DBUser {
   name: string;
   password_hash: string;
   provider: string;
+  email_verified: boolean;
 }
 
 const handler = NextAuth({
@@ -32,6 +33,7 @@ const handler = NextAuth({
         if (!user) return null;
         const valid = await bcrypt.compare(credentials.password, user.password_hash);
         if (!valid) return null;
+        if (!user.email_verified) return null; // Block unverified email accounts
         return { id: user.id, email: user.email, name: user.name };
       },
     }),

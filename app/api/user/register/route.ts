@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
   const hash = await bcrypt.hash(password, 12);
   const { error } = await sb.from('users').insert({
     id: email, email, name: name || email.split('@')[0], password_hash: hash, provider: 'credentials',
+    email_verified: false,
   });
   if (error) return NextResponse.json({ error: 'Kayıt başarısız.' }, { status: 500 });
   return NextResponse.json({ ok: true });

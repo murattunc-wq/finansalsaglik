@@ -125,6 +125,7 @@ const dictionary: Record<string, Record<Locale, string>> = {
   "E-posta": { tr: "E-posta", en: "Email" },
   "Şifre": { tr: "Şifre", en: "Password" },
   "E-posta veya şifre hatalı.": { tr: "E-posta veya şifre hatalı.", en: "Invalid email or password." },
+  "E-posta veya şifre hatalı ya da e-postanız doğrulanmamış.": { tr: "E-posta veya şifre hatalı ya da e-postanız doğrulanmamış.", en: "Invalid email, password, or your email is not verified." },
   "Giriş yapılıyor...": { tr: "Giriş yapılıyor...", en: "Logging in..." },
   "Giriş Yap": { tr: "Giriş Yap", en: "Log In" },
   "Hesabınız yok mu?": { tr: "Hesabınız yok mu?", en: "Don't have an account?" },
