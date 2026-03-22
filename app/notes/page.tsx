@@ -469,10 +469,11 @@ export default function NotesPage() {
                 <span className="text-white dark:text-black text-sm font-bold">₺</span>
               </div>
             </div>
-            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0">
-              <Link href="/" className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">Kokpit</Link>
-              <Link href="/notes" className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">Notlarım</Link>
+            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0 relative z-50">
+              <Link href="/" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all select-none">Kokpit</Link>
+              <Link href="/notes" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800 select-none">Notlarım</Link>
             </div>
+
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Desktop Actions */}
