@@ -17,7 +17,7 @@ import { useLanguage } from '@/components/LanguageProvider';
 import { useTheme } from 'next-themes';
 import { DayPicker } from 'react-day-picker';
 import { format, isWithinInterval, parseISO, parse, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
-import { tr } from 'date-fns/locale';
+import { tr, enUS } from 'date-fns/locale';
 import 'react-day-picker/dist/style.css';
 import TransactionModal, { TransactionPayload } from '@/components/TransactionModal';
 
@@ -1140,14 +1140,14 @@ export default function FinanceDashboard() {
             {/* Tabs */}
             <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0 relative z-50">
                <Link href="/" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800 select-none">
-                 Kokpit
+                 {t('Kokpit')}
                </Link>
                <button
                  onPointerDown={(e) => { e.stopPropagation(); router.push('/notes'); }}
                  onClick={(e) => e.stopPropagation()}
                  className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all select-none"
                >
-                 Notlarım
+                 {t('Notlarım')}
                </button>
             </div>
             
@@ -1312,8 +1312,8 @@ export default function FinanceDashboard() {
                 <CalendarDays className="w-4 h-4 shrink-0" />
                 <span className="hidden sm:inline">
                   {dateRange.from && dateRange.to
-                    ? `${format(dateRange.from,'dd MMM',{locale:tr})} – ${format(dateRange.to,'dd MMM yy',{locale:tr})}`
-                    : 'Tarih Seçin'}
+                    ? `${format(dateRange.from,'dd MMM',{locale:locale==='en'?enUS:tr})} – ${format(dateRange.to,'dd MMM yy',{locale:locale==='en'?enUS:tr})}`
+                    : t('Tarih Seçin')}
                 </span>
               </button>
 
@@ -1345,10 +1345,10 @@ export default function FinanceDashboard() {
                     .fc-cal .rdp-head_cell { font-size: 11px; color: ${isDark ? '#71717a' : '#94a3b8'}; font-weight: 500; }
                   `}</style>
                   <div className="fc-cal">
-                    <DayPicker mode="range" selected={dateRange as any} onSelect={r => setDateRange(r || {})} locale={tr} showOutsideDays={false} />
+                    <DayPicker mode="range" selected={dateRange as any} onSelect={r => setDateRange(r || {})} locale={locale==='en'?enUS:tr} showOutsideDays={false} />
                   </div>
                   <div className={`px-3 pb-3 flex justify-end border-t border-slate-100 dark:border-neutral-800 pt-2`}>
-                    <button onClick={() => setIsCalendarOpen(false)} className={`px-4 py-1.5 rounded-md text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition-opacity`}>Uygula</button>
+                    <button onClick={() => setIsCalendarOpen(false)} className={`px-4 py-1.5 rounded-md text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition-opacity`}>{t('Uygula')}</button>
                   </div>
                 </div>
                 </>
@@ -1464,7 +1464,7 @@ export default function FinanceDashboard() {
               <h3 className={`font-semibold ${title}`}>{t('Gelir Kaynakları')}</h3>
               <button className={`${muted} hover:text-slate-900 dark:hover:text-white`}><ArrowUpRight className="w-4 h-4"/></button>
             </div>
-            <p className={`text-sm ${muted} mb-1`}>Seçili Aralık Geliri</p>
+            <p className={`text-sm ${muted} mb-1`}>{t('Seçili Aralık Geliri')}</p>
             <h2 className={`text-3xl font-bold tracking-tight ${title} mb-4`}>₺{engineData.totalIncome.toLocaleString('tr-TR',{maximumFractionDigits:0})}</h2>
             {/* Segmented bar */}
             <div className="h-2.5 w-full bg-slate-100 dark:bg-neutral-800 flex rounded-full overflow-hidden mb-6 gap-[1px]">
@@ -1736,14 +1736,14 @@ export default function FinanceDashboard() {
               <div className="flex justify-between items-center mb-5">
                 <div>
                   <h3 className={`font-bold text-base tracking-tight ${title}`}>{t('Aktif Taksitler & Giderler')}</h3>
-                  <p className={`text-sm ${muted} mt-0.5`}>Toplam {engineData.activeList.filter(i => !i.isPaid).length} aktif yükümlülük</p>
+                  <p className={`text-sm ${muted} mt-0.5`}>{t('Toplam')} {engineData.activeList.filter(i => !i.isPaid).length} {t('aktif yükümlülük')}</p>
                 </div>
                 <button onClick={()=>setIsModalOpen(true)} className={`flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-neutral-700 rounded-md text-xs font-medium ${title} hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors`}>
                   <Plus className="w-3.5 h-3.5"/> {t('Ekle')}
                 </button>
               </div>
               <div className="space-y-3">
-                {filteredActiveList.length === 0 && <p className={`text-center py-4 text-sm ${muted}`}>{searchQuery ? 'Arama sonucuna uygun aktif yükümlülük bulunamadı.' : 'Aktif taksit veya gider yok.'}</p>}
+                {filteredActiveList.length === 0 && <p className={`text-center py-4 text-sm ${muted}`}>{searchQuery ? t('Arama sonucuna uygun aktif yükümlülük bulunamadı.') : t('Aktif taksit veya gider yok.')}</p>}
                 
                 {filteredActiveList.map(item => (
                   <div key={item.id} className={`group flex justify-between items-center p-2 -mx-2 rounded-lg hover:bg-slate-50 dark:hover:bg-neutral-800/40 transition-colors cursor-pointer ${item.isPaid ? 'opacity-40 grayscale' : ''}`}>

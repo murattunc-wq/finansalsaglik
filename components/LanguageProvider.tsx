@@ -136,7 +136,43 @@ const dictionary: Record<string, Record<Locale, string>> = {
   "Ad Soyad": { tr: "Ad Soyad", en: "Full Name" },
   "(min. 6 karakter)": { tr: "(min. 6 karakter)", en: "(min. 6 chars)" },
   "Kayıt oluşturuluyor...": { tr: "Kayıt oluşturuluyor...", en: "Creating account..." },
-  "Zaten hesabınız var mı?": { tr: "Zaten hesabınız var mı?", en: "Already have an account?" }
+  "Zaten hesabınız var mı?": { tr: "Zaten hesabınız var mı?", en: "Already have an account?" },
+
+  // TransactionModal
+  "Yeni": { tr: "Yeni", en: "New" },
+  "Kaydı": { tr: "Kaydı", en: "Record" },
+  "Transfer": { tr: "Transfer", en: "Transfer" },
+  "Finansal hareketlerinizi detaylandırın.": { tr: "Finansal hareketlerinizi detaylandırın.", en: "Describe your financial transaction." },
+  "İşlem Tutarı": { tr: "İşlem Tutarı", en: "Transaction Amount" },
+  "Açıklama / Başlık": { tr: "Açıklama / Başlık", en: "Description / Title" },
+  "Örn. Mac Studio Alımı, Kira Geliri vs.": { tr: "Örn. Mac Studio Alımı, Kira Geliri vs.", en: "e.g. MacBook Purchase, Rent Income, etc." },
+  "İşlem Tipi & Sıklığı": { tr: "İşlem Tipi & Sıklığı", en: "Transaction Type & Frequency" },
+  "Tek Sefer": { tr: "Tek Sefer", en: "One-Time" },
+  "Sadece bu aya özel.": { tr: "Sadece bu aya özel.", en: "This month only." },
+  "Aylık otomatik işler.": { tr: "Aylık otomatik işler.", en: "Repeats monthly automatically." },
+  "Sadece Hatırlatıcı (Bakiye Etkilemez)": { tr: "Sadece Hatırlatıcı (Bakiye Etkilemez)", en: "Reminder Only (Doesn't Affect Balance)" },
+  "Ödendi işaretlenene kadar bakiyeden düşmez.": { tr: "Ödendi işaretlenene kadar bakiyeden düşmez.", en: "Won't be deducted until marked as paid." },
+  "İşlem Tarihi": { tr: "İşlem Tarihi", en: "Transaction Date" },
+  "Şu Tarihe Kadar Tekrarla": { tr: "Şu Tarihe Kadar Tekrarla", en: "Repeat Until" },
+  "Her Ayın Hangi Günü Ödenecek? (1-31)": { tr: "Her Ayın Hangi Günü Ödenecek? (1-31)", en: "Which Day of the Month is Due? (1-31)" },
+  "Taksitlendir": { tr: "Taksitlendir", en: "Installments" },
+  "Bu ödemeyi gelecek aylara dağıt.": { tr: "Bu ödemeyi gelecek aylara dağıt.", en: "Split this payment over future months." },
+  "Taksit Sayısı (Ay)": { tr: "Taksit Sayısı (Ay)", en: "Installment Count (Months)" },
+  "Bu işlem aylık": { tr: "Bu işlem aylık", en: "This transaction will appear as" },
+  "olarak yansıyacaktır.": { tr: "olarak yansıyacaktır.", en: "per month." },
+  "Kaydediliyor...": { tr: "Kaydediliyor...", en: "Saving..." },
+
+  // Dashboard extra strings - widgets and counters
+  "Arama sonucuna uygun aktif yükümlülük bulunamadı.": { tr: "Arama sonucuna uygun aktif yükümlülük bulunamadı.", en: "No active liabilities matching search." },
+  "Aktif taksit veya gider yok.": { tr: "Aktif taksit veya gider yok.", en: "No active instalments or expenses." },
+  "Uygula": { tr: "Uygula", en: "Apply" },
+  "Tarih Seçin": { tr: "Tarih Seçin", en: "Select Date" },
+  "PIN Belirle": { tr: "PIN Belirle", en: "Set PIN" },
+  "PIN Kaldır": { tr: "PIN Kaldır", en: "Remove PIN" },
+  "Profil": { tr: "Profil", en: "Profile" },
+  "PIN Doğrulama": { tr: "PIN Doğrulama", en: "PIN Verification" },
+  "Onayla": { tr: "Onayla", en: "Confirm" },
+  "Gizlilik Modu": { tr: "Gizlilik Modu", en: "Privacy Mode" }
 };
 
 interface LanguageContextProps {

@@ -50,17 +50,22 @@ function calcType(t: RuleType): 'income' | 'expense' {
   return (t === 'income' || t === 'upcoming') ? 'income' : 'expense';
 }
 
-const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  pending:  { label: 'Ödenecek',      cls: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' },
-  upcoming: { label: 'Gelecek Ödeme', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
-};
+function STATUS_BADGE_MAP(key: string, t: (k: string) => string): { label: string; cls: string } | undefined {
+  const map: Record<string, { label: string; cls: string }> = {
+    pending:  { label: t('Ödenecek'),       cls: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' },
+    upcoming: { label: t('Gelecek Ödeme'), cls: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
+  };
+  return map[key];
+}
 
-const RULE_TYPE_OPTIONS: { value: RuleType; label: string; active: string; }[] = [
-  { value: 'income',   label: 'Gelir',          active: 'bg-emerald-500 text-white' },
-  { value: 'expense',  label: 'Gider',           active: 'bg-rose-500 text-white' },
-  { value: 'pending',  label: 'Ödenecek',        active: 'bg-amber-500 text-white' },
-  { value: 'upcoming', label: 'Gelecek Ödeme',   active: 'bg-blue-500 text-white' },
-];
+function RULE_TYPE_OPTIONS(t: (k: string) => string) {
+  return [
+    { value: 'income',   label: t('Gelir'),          active: 'bg-emerald-500 text-white' },
+    { value: 'expense',  label: t('Gider'),           active: 'bg-rose-500 text-white' },
+    { value: 'pending',  label: t('Ödenecek'),        active: 'bg-amber-500 text-white' },
+    { value: 'upcoming', label: t('Gelecek Ödeme'),   active: 'bg-blue-500 text-white' },
+  ] as const;
+}
 
 /* ============================================================
    PARSER FUNCTIONS
@@ -499,8 +504,8 @@ export default function NotesPage() {
               </div>
             </div>
             <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0 relative z-50">
-              <Link href="/" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all select-none">Kokpit</Link>
-              <Link href="/notes" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800 select-none">Notlarım</Link>
+              <Link href="/" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all select-none">{t('Kokpit')}</Link>
+              <Link href="/notes" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800 select-none">{t('Notlarım')}</Link>
             </div>
 
           </div>
@@ -646,7 +651,7 @@ export default function NotesPage() {
                       onChange={e=>setNewKw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addRule()}
                       className={`flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#18181b] ${ttl} focus:outline-none focus:border-indigo-400 transition-colors`}/>
                     <div className="flex flex-wrap rounded-lg overflow-hidden border border-slate-200 dark:border-neutral-800 shrink-0 w-full sm:w-auto">
-                      {RULE_TYPE_OPTIONS.map((opt, i) => (
+                      {RULE_TYPE_OPTIONS(t).map((opt, i) => (
                         <button key={opt.value} onClick={()=>setNewKwType(opt.value)}
                           className={`px-3 py-2 text-xs font-semibold transition-colors ${i>0?'border-l border-slate-200 dark:border-neutral-800':''} ${newKwType===opt.value ? opt.active : `bg-white dark:bg-[#18181b] ${muted}`}`}>
                           {opt.label}
@@ -664,8 +669,8 @@ export default function NotesPage() {
                             <span className={`text-sm font-medium ${ttl} font-mono`}>{rule.keyword}</span>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${rule.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':rule.type==='expense'?'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400':STATUS_BADGE[rule.type].cls}`}>
-                              {RULE_TYPE_OPTIONS.find(o=>o.value===rule.type)?.label}
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${rule.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':rule.type==='expense'?'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400':(STATUS_BADGE_MAP(rule.type, t)?.cls ?? '')}`}>
+                              {RULE_TYPE_OPTIONS(t).find(o=>o.value===rule.type)?.label}
                             </span>
                             <button onClick={()=>removeRule(rule.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-500 transition-opacity"><X className="w-3.5 h-3.5"/></button>
                           </div>
@@ -701,8 +706,8 @@ export default function NotesPage() {
               <div className={`${card} overflow-hidden`}>
                 <div className="px-5 py-3.5 border-b border-slate-100 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-900/30 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-500"/>
-                  <h2 className={`font-semibold text-sm ${ttl}`}>Aylık Borç / Ödeme Özeti</h2>
-                  <span className={`ml-auto text-xs ${muted}`}>{sortedMonths.length} ay tespit edildi</span>
+                  <h2 className={`font-semibold text-sm ${ttl}`}>{t('Aylık Borç / Ödeme Özeti')}</h2>
+                  <span className={`ml-auto text-xs ${muted}`}>{sortedMonths.length} {t('ay tespit edildi')}</span>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
@@ -736,9 +741,9 @@ export default function NotesPage() {
                               <div className="flex items-center gap-1 sm:gap-2 truncate max-w-[80px] sm:max-w-[200px]">
                                 {calcType(entry.type)==='income'?<TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>:<TrendingDown className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
                                 <span className={`text-sm ${ttl}`}>{entry.label}</span>
-                                {STATUS_BADGE[entry.type] && (
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${STATUS_BADGE[entry.type].cls}`}>
-                                    {STATUS_BADGE[entry.type].label}
+                                {STATUS_BADGE_MAP(entry.type, t) && (
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${STATUS_BADGE_MAP(entry.type, t)!.cls}`}>
+                                    {STATUS_BADGE_MAP(entry.type, t)!.label}
                                   </span>
                                 )}
                               </div>
@@ -791,7 +796,7 @@ export default function NotesPage() {
             <div className={`${card} overflow-hidden`}>
               <div className="px-5 py-3.5 border-b border-slate-100 dark:border-neutral-800 flex items-center gap-2 bg-slate-50/50 dark:bg-neutral-900/30">
                 <Calculator className="w-4 h-4 text-emerald-500"/>
-                <h2 className={`font-semibold text-sm ${ttl}`}>Hesap Makinesi</h2>
+                <h2 className={`font-semibold text-sm ${ttl}`}>{t('Hesap Makinesi')}</h2>
               </div>
               <div className="p-4 flex flex-col gap-3">
                 <div className={`bg-slate-100 dark:bg-[#18181b] rounded-xl px-4 py-3 flex flex-col items-end border border-slate-200 dark:border-neutral-800 min-h-[72px] justify-end ${privacyClass}`}>

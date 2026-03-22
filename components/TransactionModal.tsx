@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, CheckCircle2, ChevronRight, CalendarDays, WalletCards, ArrowRightLeft, Repeat, Coins, Bell } from 'lucide-react';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export type TransactionPayload = {
   type: 'expense' | 'income' | 'transfer';
@@ -25,6 +26,7 @@ export default function TransactionModal({
   onClose: () => void; 
   onSave: (data: TransactionPayload) => void;
 }) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'expense' | 'income' | 'transfer'>('expense');
   const [paymentType, setPaymentType] = useState<'one-time' | 'recurring'>('one-time');
   const [isReminder, setIsReminder] = useState(false);
@@ -78,6 +80,8 @@ export default function TransactionModal({
 
   const isSaveDisabled = isSaving || !amount || !description || (paymentType === 'recurring' && !repeatUntil);
 
+  const tabLabel = activeTab === 'expense' ? t('Gider') : activeTab === 'income' ? t('Gelir') : t('Transfer');
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
       <div className="bg-white border border-slate-200 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -86,9 +90,9 @@ export default function TransactionModal({
         <div className="flex justify-between items-center p-5 border-b border-slate-200">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-slate-900">
-              Yeni {activeTab === 'expense' ? 'Gider' : activeTab === 'income' ? 'Gelir' : 'Transfer'} Kaydı
+              {t('Yeni')} {tabLabel} {t('Kaydı')}
             </h2>
-            <p className="text-sm text-slate-500 mt-0.5">Finansal hareketlerinizi detaylandırın.</p>
+            <p className="text-sm text-slate-500 mt-0.5">{t('Finansal hareketlerinizi detaylandırın.')}</p>
           </div>
           <button 
             onClick={onClose}
@@ -103,9 +107,9 @@ export default function TransactionModal({
           {/* Main Transaction Tabs */}
           <div className="px-5 pt-5 pb-2">
             <div className="flex p-1 bg-slate-100 rounded-lg border border-slate-200">
-              {[{id: 'expense', label: 'Gider', icon: <WalletCards className="w-4 h-4" />}, 
-                {id: 'income', label: 'Gelir', icon: <CheckCircle2 className="w-4 h-4" />}, 
-                {id: 'transfer', label: 'Transfer', icon: <ArrowRightLeft className="w-4 h-4" />}]
+              {[{id: 'expense', label: t('Gider'), icon: <WalletCards className="w-4 h-4" />}, 
+                {id: 'income', label: t('Gelir'), icon: <CheckCircle2 className="w-4 h-4" />}, 
+                {id: 'transfer', label: t('Transfer'), icon: <ArrowRightLeft className="w-4 h-4" />}]
                 .map((tab) => (
                 <button
                   key={tab.id}
@@ -128,7 +132,7 @@ export default function TransactionModal({
             {/* Amount Input */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-700 leading-none">
-                İşlem Tutarı
+                {t('İşlem Tutarı')}
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-slate-400 font-medium">₺</span>
@@ -145,11 +149,11 @@ export default function TransactionModal({
             {/* Description */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-700 leading-none">
-                Açıklama / Başlık
+                {t('Açıklama / Başlık')}
               </label>
               <input 
                 type="text" 
-                placeholder="Örn. Mac Studio Alımı, Kira Geliri vs."
+                placeholder={t('Örn. Mac Studio Alımı, Kira Geliri vs.')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 transition-colors shadow-sm"
@@ -158,7 +162,7 @@ export default function TransactionModal({
 
             {/* Recurrence Type Toggle */}
             <div className="space-y-1.5 pt-2">
-               <label className="text-sm font-medium text-slate-700 leading-none block mb-2">İşlem Tipi & Sıklığı</label>
+               <label className="text-sm font-medium text-slate-700 leading-none block mb-2">{t('İşlem Tipi & Sıklığı')}</label>
                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div 
                     onClick={() => { setPaymentType('one-time'); setRepeatUntil(''); setIsInstallment(false); }}
@@ -166,8 +170,8 @@ export default function TransactionModal({
                   >
                      <Coins className={`w-4 h-4 sm:w-5 sm:h-5 ${paymentType === 'one-time' ? 'text-indigo-600' : 'text-slate-400'}`} />
                      <div>
-                       <p className={`text-xs sm:text-sm font-medium leading-none ${paymentType === 'one-time' ? 'text-indigo-900' : 'text-slate-700'}`}>Tek Sefer</p>
-                       <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">Sadece bu aya özel.</p>
+                       <p className={`text-xs sm:text-sm font-medium leading-none ${paymentType === 'one-time' ? 'text-indigo-900' : 'text-slate-700'}`}>{t('Tek Sefer')}</p>
+                       <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">{t('Sadece bu aya özel.')}</p>
                      </div>
                   </div>
                   <div 
@@ -176,8 +180,8 @@ export default function TransactionModal({
                   >
                      <Repeat className={`w-4 h-4 sm:w-5 sm:h-5 ${paymentType === 'recurring' ? 'text-indigo-600' : 'text-slate-400'}`} />
                      <div>
-                       <p className={`text-xs sm:text-sm font-medium leading-none ${paymentType === 'recurring' ? 'text-indigo-900' : 'text-slate-700'}`}>Düzenli</p>
-                       <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">Aylık otomatik işler.</p>
+                       <p className={`text-xs sm:text-sm font-medium leading-none ${paymentType === 'recurring' ? 'text-indigo-900' : 'text-slate-700'}`}>{t('Düzenli')}</p>
+                       <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">{t('Aylık otomatik işler.')}</p>
                      </div>
                   </div>
                </div>
@@ -194,8 +198,8 @@ export default function TransactionModal({
                       <Bell className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-amber-900">Sadece Hatırlatıcı (Bakiye Etkilemez)</p>
-                      <p className="text-xs text-amber-700/70 mt-0.5">Ödendi işaretlenene kadar bakiyeden düşmez.</p>
+                      <p className="text-sm font-medium text-amber-900">{t('Sadece Hatırlatıcı (Bakiye Etkilemez)')}</p>
+                      <p className="text-xs text-amber-700/70 mt-0.5">{t('Ödendi işaretlenene kadar bakiyeden düşmez.')}</p>
                     </div>
                   </div>
                   <div className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 ${isReminder ? 'bg-amber-500' : 'bg-slate-300'}`}>
@@ -208,7 +212,7 @@ export default function TransactionModal({
             {paymentType === 'one-time' && (
               <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 pt-2">
                 <label className="text-sm font-medium text-slate-700 leading-none">
-                  İşlem Tarihi
+                  {t('İşlem Tarihi')}
                 </label>
                 <input 
                   type="date"
@@ -223,7 +227,7 @@ export default function TransactionModal({
             {paymentType === 'recurring' && (
               <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
                 <label className="text-sm font-medium text-slate-700 leading-none">
-                  Şu Tarihe Kadar Tekrarla <span className="text-rose-500">*</span>
+                  {t('Şu Tarihe Kadar Tekrarla')} <span className="text-rose-500">*</span>
                 </label>
                 <input 
                   type="date" 
@@ -238,7 +242,7 @@ export default function TransactionModal({
             {((paymentType === 'recurring' && activeTab === 'expense') || (paymentType === 'one-time' && isInstallment && activeTab === 'expense')) && (
               <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 pt-2">
                 <label className="text-sm font-medium text-slate-700 leading-none">
-                  Her Ayın Hangi Günü Ödenecek? (1-31)
+                  {t('Her Ayın Hangi Günü Ödenecek? (1-31)')}
                 </label>
                 <input 
                   type="number" 
@@ -266,8 +270,8 @@ export default function TransactionModal({
                         <CalendarDays className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-slate-900">Taksitlendir</p>
-                        <p className="text-xs text-slate-500 mt-0.5">Bu ödemeyi gelecek aylara dağıt.</p>
+                        <p className="text-sm font-medium text-slate-900">{t('Taksitlendir')}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{t('Bu ödemeyi gelecek aylara dağıt.')}</p>
                       </div>
                     </div>
                     <div className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${isInstallment ? 'bg-indigo-600' : 'bg-slate-300'}`}>
@@ -277,7 +281,7 @@ export default function TransactionModal({
 
                  <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isInstallment ? 'max-h-40 border-t border-slate-200 opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="p-4 space-y-3">
-                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Taksit Sayısı (Ay)</label>
+                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">{t('Taksit Sayısı (Ay)')}</label>
                       <div className="grid grid-cols-4 gap-2">
                         {[3, 6, 9, 12].map(num => (
                           <button 
@@ -295,7 +299,7 @@ export default function TransactionModal({
                       </div>
                       {isInstallment && amount && !isNaN(parseFloat(amount)) && (
                         <p className="text-xs text-slate-500 mt-3">
-                          Bu işlem aylık <span className="text-indigo-600 font-medium">₺{(parseFloat(amount)/installmentCount).toFixed(2)}</span> olarak yansıyacaktır.
+                          {t('Bu işlem aylık')} <span className="text-indigo-600 font-medium">₺{(parseFloat(amount)/installmentCount).toFixed(2)}</span> {t('olarak yansıyacaktır.')}.
                         </p>
                       )}
                     </div>
@@ -312,14 +316,14 @@ export default function TransactionModal({
             onClick={onClose}
             className="h-9 px-4 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-200 transition-all border border-transparent"
           >
-            İptal
+            {t('İptal')}
           </button>
           <button 
             onClick={handleSave}
             disabled={isSaveDisabled}
             className="h-9 px-4 rounded-md text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-400 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1.5 shadow-sm"
           >
-            {isSaving ? 'Kaydediliyor...' : 'Kaydet'} <ChevronRight className="w-4 h-4" />
+            {isSaving ? t('Kaydediliyor...') : t('Kaydet')} <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
