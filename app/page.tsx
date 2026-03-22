@@ -10,9 +10,10 @@ import {
 import { 
   Search, Bell, Moon, Sun, User, ArrowUpRight, ArrowDownRight, 
   Plus, CalendarDays, Wallet, TrendingUp, FileText,
-  MoreVertical, Trash2, Edit2, Download, Upload, Eye, EyeOff, Lock
+  MoreVertical, Trash2, Edit2, Download, Upload, Eye, EyeOff, Lock, Globe
 } from 'lucide-react';
 import Link from 'next/link';
+import { useLanguage } from '@/components/LanguageProvider';
 import { useTheme } from 'next-themes';
 import { DayPicker } from 'react-day-picker';
 import { format, isWithinInterval, parseISO, parse, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
@@ -106,6 +107,7 @@ export default function FinanceDashboard() {
   const { data: session } = useSession();
   const router = useRouter();
   const sessionUser = session?.user;
+  const { t, locale, setLocale } = useLanguage();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -1264,6 +1266,14 @@ export default function FinanceDashboard() {
                     </button>
                   )}
 
+                  <div className="px-4 py-3 text-sm font-medium border-b border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                    <span className={`flex items-center gap-3 ${muted}`}><Globe className="w-4 h-4" /> Dil / Language</span>
+                    <div className="flex bg-slate-100 dark:bg-neutral-900 p-0.5 rounded-md">
+                      <button onClick={(e) => { e.stopPropagation(); setLocale('tr'); }} className={`px-2 py-1 text-xs font-bold rounded min-w-[32px] transition-colors ${locale === 'tr' ? 'bg-white dark:bg-neutral-800 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}`}>TR</button>
+                      <button onClick={(e) => { e.stopPropagation(); setLocale('en'); }} className={`px-2 py-1 text-xs font-bold rounded min-w-[32px] transition-colors ${locale === 'en' ? 'bg-white dark:bg-neutral-800 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}`}>EN</button>
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => signOut({ callbackUrl: '/login' })}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium"
@@ -1284,7 +1294,7 @@ export default function FinanceDashboard() {
 
         {/* ── PAGE HEADER ── */}
         <div className="flex flex-row items-center justify-between gap-4">
-          <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${title}`}>Finansal Kokpit</h1>
+          <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${title}`}>{t('Finansal Kokpit')}</h1>
           
           {/* Action Buttons Aligned Right */}
           <div className="flex items-center gap-2 justify-end">
@@ -1570,7 +1580,7 @@ export default function FinanceDashboard() {
           {/* Transactions Table – Bulk Actions */}
           <div className={`lg:col-span-8 ${card} p-0 flex flex-col`}>
             <div className="p-5 flex flex-wrap justify-between items-center gap-3 border-b border-slate-100 dark:border-neutral-800">
-              <h3 className={`font-bold text-lg tracking-tight ${title}`}>Gerçek Zamanlı İşlemler</h3>
+              <h3 className={`font-bold text-lg tracking-tight ${title}`}>{t('Gerçek Zamanlı İşlemler')}</h3>
               <div className="flex items-center gap-3">
                 {/* Filter Tabs */}
                 <div className="flex bg-slate-100 dark:bg-neutral-800/80 p-0.5 rounded-lg border border-slate-200/60 dark:border-neutral-700/50 hidden sm:flex">
@@ -1720,7 +1730,7 @@ export default function FinanceDashboard() {
             <div className={`${card} p-6 flex-1 flex flex-col`}>
               <div className="flex justify-between items-center mb-5">
                 <div>
-                  <h3 className={`font-bold text-base tracking-tight ${title}`}>Aktif Taksitler & Giderler</h3>
+                  <h3 className={`font-bold text-base tracking-tight ${title}`}>{t('Aktif Taksitler & Giderler')}</h3>
                   <p className={`text-sm ${muted} mt-0.5`}>Toplam {engineData.activeList.filter(i => !i.isPaid).length} aktif yükümlülük</p>
                 </div>
                 <button onClick={()=>setIsModalOpen(true)} className={`flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-neutral-700 rounded-md text-xs font-medium ${title} hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors`}>

@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t, locale, setLocale } = useLanguage();
   const [name, setName]         = useState('');
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +16,7 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) { setError('Şifre en az 6 karakter olmalı.'); return; }
+    if (password.length < 6) { setError(t('Şifre en az 6 karakter olmalı.')); return; }
     setLoading(true);
     setError('');
     const res = await fetch('/api/user/register', {
@@ -24,7 +26,7 @@ export default function RegisterPage() {
     });
     if (!res.ok) {
       const d = await res.json();
-      setError(d.error || 'Kayıt başarısız.');
+      setError(d.error || t('Kayıt başarısız.'));
       setLoading(false);
       return;
     }
@@ -35,15 +37,22 @@ export default function RegisterPage() {
   const handleGoogle = () => signIn('google', { callbackUrl: '/' });
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#09090b] flex items-center justify-center p-4 relative">
+      
+      {/* Language Toggle */}
+      <div className="absolute top-6 right-6 flex items-center gap-1 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-lg p-1 shadow-sm z-10 text-sm font-semibold">
+        <button onClick={() => setLocale('tr')} className={`px-2 py-1 rounded transition-colors ${locale === 'tr' ? 'bg-slate-100 dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-neutral-800/50'}`}>TR</button>
+        <button onClick={() => setLocale('en')} className={`px-2 py-1 rounded transition-colors ${locale === 'en' ? 'bg-slate-100 dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-neutral-800/50'}`}>EN</button>
+      </div>
+
       <div className="w-full max-w-md bg-white dark:bg-[#0f0f10] rounded-2xl shadow-xl border border-slate-100 dark:border-neutral-800 p-8">
 
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-xl bg-slate-900 dark:bg-white flex items-center justify-center mx-auto mb-4">
             <span className="text-white dark:text-black text-xl font-bold">₺</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Finansal Kokpit</h1>
-          <p className="text-slate-500 dark:text-neutral-400 text-sm mt-1">Yeni hesap oluşturun</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('Finansal Kokpit')}</h1>
+          <p className="text-slate-500 dark:text-neutral-400 text-sm mt-1">{t('Yeni hesap oluşturun')}</p>
         </div>
 
         {/* Google */}
@@ -57,29 +66,29 @@ export default function RegisterPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          Google ile Kayıt Ol
+          {t('Google ile Kayıt Ol')}
         </button>
 
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-neutral-800"/></div>
-          <div className="relative flex justify-center"><span className="px-3 bg-white dark:bg-[#0f0f10] text-xs text-slate-400">veya</span></div>
+          <div className="relative flex justify-center"><span className="px-3 bg-white dark:bg-[#0f0f10] text-xs text-slate-400">{t('veya')}</span></div>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-1.5">Ad Soyad</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-1.5">{t('Ad Soyad')}</label>
             <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Murat Tunç"
               className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-1.5">E-posta</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-1.5">{t('E-posta')}</label>
             <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="ornek@email.com"
               className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-1.5">Şifre <span className="text-slate-400">(min. 6 karakter)</span></label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-1.5">{t('Şifre')} <span className="text-slate-400">{t('(min. 6 karakter)')}</span></label>
             <input type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"
               className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white text-sm"
             />
@@ -92,13 +101,12 @@ export default function RegisterPage() {
           <button type="submit" disabled={loading}
             className="w-full py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-black font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
-            {loading ? 'Kayıt oluşturuluyor...' : 'Kayıt Ol'}
+            {loading ? t('Kayıt oluşturuluyor...') : t('Kayıt Ol')}
           </button>
         </form>
 
         <p className="text-center text-sm text-slate-500 dark:text-neutral-400 mt-6">
-          Zaten hesabınız var mı?{' '}
-          <a href="/login" className="text-slate-900 dark:text-white font-semibold hover:underline">Giriş Yap</a>
+          {t('Zaten hesabınız var mı?')} <a href="/login" className="text-slate-900 dark:text-white font-semibold hover:underline">{t('Giriş Yap')}</a>
         </p>
       </div>
     </div>

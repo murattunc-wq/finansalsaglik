@@ -347,6 +347,33 @@ export default function NotesPage() {
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_notes_pin', JSON.stringify(savedPin)); }, [savedPin, mounted]);
   useEffect(() => { if (mounted) localStorage.setItem('fcv2_privacy_mode', JSON.stringify(isPrivacyMode)); }, [isPrivacyMode, mounted]);
 
+  // DB Sync Load
+  useEffect(() => {
+    if (sessionUser?.email) {
+      fetch('/api/user/data')
+        .then(r => r.json())
+        .then(res => {
+          if (res.data) {
+            if (res.data.notes !== undefined && res.data.notes !== null) setNotes(res.data.notes);
+            if (res.data.customRules && Array.isArray(res.data.customRules)) setCustomRules(res.data.customRules);
+          }
+        }).catch(err => console.error('Load sync fail', err));
+    }
+  }, [sessionUser?.email]);
+
+  // DB Sync Save
+  useEffect(() => {
+    if (!mounted || !sessionUser?.email) return;
+    const to = setTimeout(() => {
+      fetch('/api/user/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes, customRules })
+      }).catch(console.error);
+    }, 2000);
+    return () => clearTimeout(to);
+  }, [notes, customRules, sessionUser?.email, mounted]);
+
   const addRule = () => {
     const kw = newKw.trim().toLowerCase();
     if (!kw || customRules.some(r => r.keyword === kw)) return;
