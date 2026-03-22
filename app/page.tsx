@@ -306,16 +306,39 @@ export default function FinanceDashboard() {
     
     // Auto-open calendar link if it's a reminder
     if (shouldDownloadIcs) {
-      const d = new Date(payload.date || new Date().toISOString());
-      const dStr = format(d, 'yyyyMMdd');
-      const nextD = new Date(d); nextD.setDate(d.getDate() + 1);
+      let nextDue = new Date(payload.date || new Date().toISOString());
+      
+      if (payload.dueDay) {
+        nextDue = new Date();
+        nextDue.setDate(payload.dueDay);
+        // If the due day this month has already passed, start next month
+        if (nextDue < new Date() && nextDue.getDate() !== new Date().getDate()) {
+          nextDue.setMonth(nextDue.getMonth() + 1);
+        }
+      }
+
+      const dStr = format(nextDue, 'yyyyMMdd');
+      const nextD = new Date(nextDue); nextD.setDate(nextDue.getDate() + 1);
       const endStr = format(nextD, 'yyyyMMdd');
+      
       const params = new URLSearchParams({
         action: 'TEMPLATE',
         text: `Ödeme: ${payload.description}`,
         dates: `${dStr}/${endStr}`,
-        details: `Finansal Kokpit tarafından planlanmış ödeme hatırlatıcısı. Öngörülen tutar: ₺${payload.amount}`
+        details: `Finansal Kokpit planlı ödeme hatırlatıcısı. Öngörülen: ₺${payload.amount}`
       });
+
+      if (payload.isInstallment && payload.installmentCount) {
+        params.append('recur', `RRULE:FREQ=MONTHLY;COUNT=${payload.installmentCount}`);
+      } else if (payload.isRecurring) {
+        if (payload.repeatUntil) {
+           const untilStr = format(new Date(payload.repeatUntil), 'yyyyMMdd') + 'T000000Z';
+           params.append('recur', `RRULE:FREQ=MONTHLY;UNTIL=${untilStr}`);
+        } else {
+           params.append('recur', `RRULE:FREQ=MONTHLY`);
+        }
+      }
+
       window.open(`https://calendar.google.com/calendar/render?${params.toString()}`, '_blank');
     }
     
@@ -1109,7 +1132,7 @@ export default function FinanceDashboard() {
             </div>
             
             {/* Tabs */}
-            <div className="hidden sm:flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg">
+            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0">
                <Link href="/" className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">
                  Kokpit
                </Link>
@@ -1119,7 +1142,7 @@ export default function FinanceDashboard() {
             </div>
             
             {/* Search Input */}
-            <div className="relative w-full max-w-[160px] sm:max-w-xs transition-all">
+            <div className="hidden sm:block relative w-full sm:max-w-xs transition-all">
               <Search className={`absolute left-3 top-2.5 h-4 w-4 ${muted}`} />
               <input 
                 placeholder="Ara..." 
@@ -1220,13 +1243,6 @@ export default function FinanceDashboard() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-        {/* Mobile Tabs */}
-        <div className="block sm:hidden border-t border-slate-100 dark:border-neutral-800 px-4 py-2 bg-slate-50/50 dark:bg-black/50 backdrop-blur-md">
-          <div className="flex items-center bg-slate-200/50 dark:bg-neutral-900 rounded-lg p-1 w-full relative">
-            <Link href="/" className="flex-1 text-center py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-neutral-800 transition-all">Kokpit</Link>
-            <Link href="/notes" className="flex-1 text-center py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">Notlarım</Link>
           </div>
         </div>
       </div>

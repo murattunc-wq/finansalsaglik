@@ -463,13 +463,13 @@ export default function NotesPage() {
       {/* NAV */}
       <div className={`${navBg} sticky top-0 z-40`}>
         <div className="max-w-[1500px] mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 shrink-0">
-            <Link href="/" title="Kokpit'e Geçiş Yap" className="p-2 -ml-2 -mt-2 -mb-2 hover:opacity-90 transition-opacity flex shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center">
+          <div className="flex items-center gap-3 md:gap-4 shrink-0 flex-1 sm:flex-none">
+            <div className="p-2 -ml-2 -mt-2 -mb-2 flex shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center border border-slate-200 dark:border-neutral-700 shadow-sm">
                 <span className="text-white dark:text-black text-sm font-bold">₺</span>
               </div>
-            </Link>
-            <div className="hidden sm:flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg">
+            </div>
+            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0">
               <Link href="/" className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">Kokpit</Link>
               <Link href="/notes" className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">Notlarım</Link>
             </div>
