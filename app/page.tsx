@@ -1097,16 +1097,16 @@ export default function FinanceDashboard() {
       )}
 
       {/* ── NAV ── */}
-      <div className={`${navBg} sticky top-0 z-40 border-b border-slate-100 dark:border-neutral-800`}>
+      <div className={`${navBg} sticky top-0 z-40 border-b border-slate-100 dark:border-neutral-800 shadow-sm`}>
         <div className="max-w-[1500px] mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
           
           {/* Left: Logo and Search */}
           <div className="flex items-center gap-3 md:gap-4 shrink-0">
-            <Link href="/notes" title="Notlar'a Geçiş Yap" className="p-2 -ml-2 -mt-2 -mb-2 hover:opacity-90 transition-opacity flex shrink-0">
+            <div className="p-2 -ml-2 -mt-2 -mb-2 flex shrink-0">
               <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center">
                 <span className="text-white dark:text-black text-sm font-bold">₺</span>
               </div>
-            </Link>
+            </div>
             
             {/* Tabs */}
             <div className="hidden sm:flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg">
@@ -1220,6 +1220,13 @@ export default function FinanceDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+        {/* Mobile Tabs */}
+        <div className="block sm:hidden border-t border-slate-100 dark:border-neutral-800 px-4 py-2 bg-slate-50/50 dark:bg-black/50 backdrop-blur-md">
+          <div className="flex items-center bg-slate-200/50 dark:bg-neutral-900 rounded-lg p-1 w-full relative">
+            <Link href="/" className="flex-1 text-center py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-neutral-800 transition-all">Kokpit</Link>
+            <Link href="/notes" className="flex-1 text-center py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">Notlarım</Link>
           </div>
         </div>
       </div>
@@ -1370,15 +1377,16 @@ export default function FinanceDashboard() {
           </div>
           {/* Installments */}
           <div className={`${card} p-5 h-36 flex flex-col justify-between`}>
-            <div className="flex items-center justify-between">
-              <div className={`flex items-center gap-2 ${muted}`}><FileText className="w-4 h-4" /><span className="text-sm font-medium">Ödenmemiş Taksitler</span></div>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${engineData.unpaidCount > 0 ? 'bg-rose-100 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
-                {engineData.unpaidCount} bekleyen
-              </span>
-            </div>
-            <h2 className={`text-3xl font-bold tracking-tight ${title} mt-2`}>₺{engineData.totalPendingDebts.toLocaleString('tr-TR',{maximumFractionDigits:0})}</h2>
-            <div className={`text-xs font-semibold mt-1 ${engineData.unpaidCount > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
-              Bu ayki {engineData.unpaidCount > 0 ? 'ödemelerinizi unutmayın.' : 'tüm taksitleri ödediniz!'}
+            <div className={`flex items-center gap-2 ${muted}`}><FileText className="w-4 h-4" /><span className="text-sm font-medium">Ödenmemiş Taksitler</span></div>
+            <div className="flex items-baseline justify-between mt-auto">
+              <h2 className={`text-3xl font-bold tracking-tight ${title}`}>₺{engineData.totalPendingDebts.toLocaleString('tr-TR',{maximumFractionDigits:0})}</h2>
+              {engineData.unpaidCount > 0 ? (
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-100 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                  {engineData.unpaidCount} bekleyen
+                </span>
+              ) : (
+                <span className="flex items-center text-emerald-600 dark:text-emerald-400 text-xs font-semibold shrink-0">Tümü ödendi!</span>
+              )}
             </div>
           </div>
         </div>

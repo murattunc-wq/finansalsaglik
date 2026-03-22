@@ -19,9 +19,14 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
   const sb = getSupabaseAdmin() as any;
+
+  // Preserve existing data structures (e.g., notes, customRules) not sent in current payload
+  const { data: existing } = await sb.from('financial_data').select('data').eq('user_id', session.user.email).single();
+  const mergedData = { ...(existing?.data || {}), ...body };
+
   const { error } = await sb
     .from('financial_data')
-    .upsert({ user_id: session.user.email, data: body, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+    .upsert({ user_id: session.user.email, data: mergedData, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
   if (error) return NextResponse.json({ error: 'Save failed' }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
