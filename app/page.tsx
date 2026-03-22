@@ -1609,7 +1609,7 @@ export default function FinanceDashboard() {
                         onChange={() => handleToggleSelectAll(engineData.allTxns.map(t=>t.id))}
                       />
                     </th>
-                    <th className={`px-2 py-3 w-auto ${muted} text-left`}>İşlem Adı</th>
+                    <th className={`pl-14 pr-2 sm:px-2 py-3 w-auto ${muted} text-left`}>İşlem Adı</th>
                     <th className={`px-2 py-3 w-24 sm:w-28 ${muted} text-left`}>Tarih</th>
                     <th className={`hidden sm:table-cell px-5 py-3 w-24 ${muted} text-left`}>Tür</th>
                     <th className={`px-2 py-3 w-28 text-right ${muted}`}>Tutar</th>
