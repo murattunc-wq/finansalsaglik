@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -103,6 +104,7 @@ END:VCALENDAR`;
 export default function FinanceDashboard() {
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
+  const router = useRouter();
   const sessionUser = session?.user;
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -1134,13 +1136,17 @@ export default function FinanceDashboard() {
             </div>
             
             {/* Tabs */}
-            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0 relative z-50">
-               <Link href="/" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">
+            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1.5 sm:p-1 rounded-xl sm:rounded-lg shrink-0 relative z-50">
+               <Link href="/" onClick={(e) => e.stopPropagation()} className="px-5 py-2.5 sm:px-3 sm:py-1.5 text-[15px] sm:text-sm font-semibold rounded-lg sm:rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800 active:scale-95 select-none">
                  Kokpit
                </Link>
-               <Link href="/notes" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">
+               <button
+                 onPointerDown={(e) => { e.stopPropagation(); router.push('/notes'); }}
+                 onClick={(e) => e.stopPropagation()}
+                 className="px-5 py-2.5 sm:px-3 sm:py-1.5 text-[15px] sm:text-sm font-medium rounded-lg sm:rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all active:scale-95 active:opacity-70 select-none"
+               >
                  Notlarım
-               </Link>
+               </button>
             </div>
             
             {/* Search Input */}
