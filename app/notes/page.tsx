@@ -475,6 +475,13 @@ export default function NotesPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Desktop Actions */}
+            <div className="hidden sm:flex items-center gap-2">
+              <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors`}>
+                {isDark ? <Sun className="w-5 h-5"/> : <Moon className="w-5 h-5"/>}
+              </button>
+            </div>
+            
             <div className="relative">
               <button 
                 onClick={(e)=>{e.stopPropagation();setIsProfileOpen(p=>!p);}} 
@@ -491,7 +498,7 @@ export default function NotesPage() {
                     <p className={`text-xs ${muted} truncate`}>{sessionUser?.email||''}</p>
                   </div>
 
-                  <div className="py-1 border-b border-slate-100 dark:border-neutral-800">
+                  <div className="py-1 border-b border-slate-100 dark:border-neutral-800 sm:hidden">
                     <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`w-full text-left px-4 py-2.5 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors flex items-center gap-3`}>
                       {isDark ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>} 
                       {isDark ? 'Açık Tema' : 'Koyu Tema'}

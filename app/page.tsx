@@ -1093,7 +1093,9 @@ export default function FinanceDashboard() {
      ============================================================ */
   return (
     <div className={bg} onClick={() => { setActiveTxnMenu(null); setIsCalendarOpen(false); setIsActionMenuOpen(false); setIsNotificationsOpen(false); setIsProfileOpen(false); }}>
-
+      <style dangerouslySetInnerHTML={{__html: `
+        .recharts-wrapper *:focus { outline: none !important; }
+      `}} />
       {/* PIN Modal Overlay */}
       {pinAction && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
@@ -1435,8 +1437,12 @@ export default function FinanceDashboard() {
                   <YAxis hide domain={[0, 'auto']} />
                   <RechartsTooltip
                     cursor={{fill: isDark ? '#18181b' : '#f1f5f9'}}
-                    contentStyle={{backgroundColor: isDark?'#09090b':'#fff', color: isDark?'#fff':'#000', borderRadius:'8px', border:`1px solid ${isDark?'#27272a':'#e2e8f0'}`}}
+                    contentStyle={{backgroundColor: isDark?'#09090b':'#fff', color: isDark?'#fff':'#000', borderRadius:'8px', border:`1px solid ${isDark?'#27272a':'#e2e8f0'}`, fontSize: '12px'}}
                     formatter={(val:any) => `₺${Number(val).toLocaleString('tr-TR',{maximumFractionDigits:0})}`}
+                    labelFormatter={(label) => {
+                      const m = { 'Oca':'Ocak', 'Şub':'Şubat', 'Mar':'Mart', 'Nis':'Nisan', 'May':'Mayıs', 'Haz':'Haziran', 'Tem':'Temmuz', 'Ağu':'Ağustos', 'Eyl':'Eylül', 'Eki':'Ekim', 'Kas':'Kasım', 'Ara':'Aralık' };
+                      return (m as any)[label] || label;
+                    }}
                   />
                   {/* Unpaid expenses – dark/black bar (bottom of stack) */}
                   <Bar dataKey="unpaid" stackId="a" name="Ödenmemiş">
@@ -1549,18 +1555,18 @@ export default function FinanceDashboard() {
               <table className="w-full text-sm text-left table-fixed">
                 <thead className={`text-xs font-semibold uppercase tracking-wider border-b border-slate-100 dark:border-neutral-800 sticky top-0 bg-white dark:bg-[#09090b] z-10`}>
                   <tr className="group">
-                    <th className="px-4 py-3 w-8">
+                    <th className="px-3 sm:px-4 py-3 w-10">
                       <input 
                         type="checkbox" 
-                        className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.size>0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                        className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.size>0 ? 'opacity-100 sm:opacity-0' : 'opacity-0'} group-hover:opacity-100`}
                         checked={selectedTxns.size === engineData.allTxns.length && engineData.allTxns.length > 0}
                         onChange={() => handleToggleSelectAll(engineData.allTxns.map(t=>t.id))}
                       />
                     </th>
-                    <th className={`px-2 py-3 ${muted} w-5/12 sm:w-4/12`}>İşlem Adı</th>
-                    <th className={`px-2 py-3 ${muted} w-4/12 sm:w-3/12`}>Tarih</th>
-                    <th className={`hidden sm:table-cell px-5 py-3 ${muted} w-2/12`}>Tür</th>
-                    <th className={`px-2 py-3 text-right ${muted} w-3/12`}>Tutar</th>
+                    <th className={`px-2 py-3 w-auto ${muted} text-left`}>İşlem Adı</th>
+                    <th className={`px-2 py-3 w-24 sm:w-28 ${muted} text-left`}>Tarih</th>
+                    <th className={`hidden sm:table-cell px-5 py-3 w-24 ${muted} text-left`}>Tür</th>
+                    <th className={`px-3 py-3 w-28 text-right ${muted}`}>Tutar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-neutral-800/60">
@@ -1569,15 +1575,15 @@ export default function FinanceDashboard() {
                   )}
                   {finalFilteredTxns.map(txn => (
                     <tr key={txn.id} className="hover:bg-slate-50/70 dark:hover:bg-neutral-900/40 transition-colors group">
-                      <td className="px-4 py-3.5">
+                      <td className="px-3 sm:px-4 py-3.5">
                         <input 
                           type="checkbox" 
-                          className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.has(txn.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                          className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.has(txn.id) ? 'opacity-100 sm:opacity-0' : 'opacity-0'} group-hover:opacity-100`}
                           checked={selectedTxns.has(txn.id)}
                           onChange={() => handleToggleTxnSelect(txn.id)}
                         />
                       </td>
-                      <td className="px-2 py-3.5">
+                      <td className="px-2 py-3.5 text-left">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-bold text-sm ${txn.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
                             {txn.avatarPrefix}
@@ -1588,23 +1594,23 @@ export default function FinanceDashboard() {
                           </div>
                         </div>
                       </td>
-                      <td className={`px-3 py-3.5 ${muted} text-xs font-medium whitespace-nowrap`}>{format(new Date(txn.date),'dd MMM yyyy',{locale:tr})}</td>
-                      <td className={`hidden sm:table-cell px-5 py-3.5`}>
+                      <td className={`px-2 py-3.5 ${muted} text-xs font-medium whitespace-nowrap text-left`}>{format(new Date(txn.date),'dd MMM yyyy',{locale:tr})}</td>
+                      <td className={`hidden sm:table-cell px-5 py-3.5 text-left`}>
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${txn.type==='income'?'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
                           {txn.type==='income'?'Gelir':'Gider'}
                         </span>
                       </td>
-                      <td className={`px-2 py-3.5 text-right font-semibold tabular-nums ${txn.type==='income'?'text-emerald-600 dark:text-emerald-400':title}`}>
+                      <td className={`px-3 py-3.5 text-right font-semibold tabular-nums ${txn.type==='income'?'text-emerald-600 dark:text-emerald-400':title}`}>
                         <div className="flex items-center justify-end gap-1">
                           ₺{Math.abs(txn.amount).toLocaleString('tr-TR',{maximumFractionDigits:0})}
                           
-                          {/* ⋮ menu – opacity-0 by default, visible on row hover */}
+                          {/* ⋮ menu */}
                           <div className="relative ml-1">
                             <button
                               onClick={e => { e.stopPropagation(); setActiveTxnMenu(activeTxnMenu===txn.id?null:txn.id); }}
-                              className={`p-1 rounded-md ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100`}
+                              className={`p-1 rounded-md ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none`}
                             >
-                              <MoreVertical className="w-3.5 h-3.5"/>
+                              <MoreVertical className="w-4 h-4"/>
                             </button>
                             {activeTxnMenu===txn.id && (
                               <div className="absolute right-7 top-0 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden min-w-[100px]">
@@ -1729,8 +1735,8 @@ export default function FinanceDashboard() {
                         )}
                       </div>
                       <div className="relative">
-                        <button onClick={(e)=>{e.stopPropagation();setActiveTxnMenu(activeTxnMenu===item.id?null:item.id);}} className={`p-1 rounded-md ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-neutral-700 opacity-0 group-hover:opacity-100 transition-opacity`}>
-                          <MoreVertical className="w-3.5 h-3.5"/>
+                        <button onClick={(e)=>{e.stopPropagation();setActiveTxnMenu(activeTxnMenu===item.id?null:item.id);}} className={`p-1 rounded-md ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-neutral-700 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none`}>
+                          <MoreVertical className="w-4 h-4"/>
                         </button>
                         {activeTxnMenu===item.id && (
                           <div className="absolute right-0 top-7 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden w-[160px]">
