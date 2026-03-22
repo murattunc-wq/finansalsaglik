@@ -1609,7 +1609,7 @@ export default function FinanceDashboard() {
                         onChange={() => handleToggleSelectAll(engineData.allTxns.map(t=>t.id))}
                       />
                     </th>
-                    <th className={`pl-14 pr-2 sm:px-2 py-3 w-auto ${muted} text-left`}>İşlem Adı</th>
+                    <th className={`px-4 py-3 w-auto ${muted} text-left`}>İşlem Adı</th>
                     <th className={`px-2 py-3 w-24 sm:w-28 ${muted} text-left`}>Tarih</th>
                     <th className={`hidden sm:table-cell px-5 py-3 w-24 ${muted} text-left`}>Tür</th>
                     <th className={`px-2 py-3 w-28 text-right ${muted}`}>Tutar</th>
@@ -1630,15 +1630,12 @@ export default function FinanceDashboard() {
                           onChange={() => handleToggleTxnSelect(txn.id)}
                         />
                       </td>
-                      <td className="px-2 py-3.5 text-left">
+                      <td className="px-4 py-3.5 text-left">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-bold text-sm ${txn.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
+                          <div className={`hidden sm:flex w-9 h-9 shrink-0 rounded-full items-center justify-center font-bold text-sm ${txn.type==='income'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'}`}>
                             {txn.avatarPrefix}
                           </div>
-                          <div className="min-w-0 overflow-hidden">
-                            <span className={`font-semibold ${title} block leading-tight truncate max-w-[90px] sm:max-w-full`}>{txn.name}</span>
-                            {txn.isRecurringBase && <span className={`text-[10px] uppercase font-bold ${muted} tracking-wider`}>Sistem Oto.</span>}
-                          </div>
+                          <span className={`font-semibold ${title} truncate`}>{txn.name}</span>
                         </div>
                       </td>
                       <td className={`px-2 py-3.5 ${muted} text-xs font-medium whitespace-nowrap text-left`}>{format(new Date(txn.date),'dd MMM yyyy',{locale:tr})}</td>
