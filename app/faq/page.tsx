@@ -115,8 +115,13 @@ export default function FAQPage() {
             <ArrowLeft className="w-4 h-4" />
             {locale === 'tr' ? 'Kokpit\'e Dön' : 'Back to Dashboard'}
           </Link>
-          <div className="font-bold text-lg tracking-tight">Finansal Kokpit</div>
-          <div className="w-20" /> {/* Spacer */}
+          <div className="flex items-center gap-3">
+            <div className="p-2 -mr-2 -mt-2 -mb-2 flex shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shadow-sm">
+                <span className="text-white dark:text-black text-sm font-bold">₺</span>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 

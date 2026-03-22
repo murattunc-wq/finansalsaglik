@@ -708,10 +708,10 @@ export default function NotesPage() {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b border-slate-100 dark:border-neutral-800 text-left">
-                        <th className={`sticky left-0 z-20 bg-white dark:bg-[#09090b] px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted} w-28`}>Ay</th>
-                        <th className={`sticky left-28 z-20 bg-white dark:bg-[#09090b] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted}`}>Kalem</th>
-                        <th className={`px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted} min-w-[120px]`}>Tutar</th>
-                        <th className={`px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted} min-w-[120px]`}>Aylık Net</th>
+                        <th className={`sticky left-0 z-20 bg-white dark:bg-[#09090b] px-2 sm:px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted} w-16 sm:w-28`}>{t('Ay')}</th>
+                        <th className={`sticky left-16 sm:left-28 z-20 bg-white dark:bg-[#09090b] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] px-2 sm:px-5 py-3 text-xs font-semibold uppercase tracking-wide ${muted}`}>{t('Kalem')}</th>
+                        <th className={`px-2 sm:px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted} min-w-[80px] sm:min-w-[120px]`}>{t('Tutar')}</th>
+                        <th className={`px-2 sm:px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide ${muted} min-w-[80px] sm:min-w-[120px]`}>{t('Aylık Net')}</th>
                       </tr>
                     </thead>
                     <tbody className={privacyClass}>
@@ -723,17 +723,17 @@ export default function NotesPage() {
                           <tr key={`${month}-${i}`}
                           className={`group border-b border-slate-100 dark:border-neutral-800/60 transition-colors ${isCurrent?'bg-amber-50 dark:bg-[#1f1a0d]':'bg-white dark:bg-[#09090b]'} hover:bg-slate-50 dark:hover:bg-neutral-900/50 ${i===0?'border-t-2 border-t-slate-200 dark:border-t-neutral-700':''}`}>
                             {i===0 && (
-                              <td rowSpan={monthEntries.length} className={`sticky left-0 z-10 px-5 py-3 align-middle bg-inherit`}>
-                                <div className="flex flex-col items-start gap-1 w-16">
-                                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${total>=0?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'}`}>
-                                    {MONTH_LABEL[month]||`Ay ${month}`}
+                              <td rowSpan={monthEntries.length} className={`sticky left-0 z-10 px-1 sm:px-5 py-3 align-middle bg-inherit`}>
+                                <div className="flex flex-col items-center sm:items-start gap-1 w-14 sm:w-16 mx-auto sm:mx-0">
+                                  <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2.5 py-1 rounded-full whitespace-nowrap ${total>=0?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'}`}>
+                                    {MONTH_LABEL[month]||t(`Ay ${month}`)}
                                   </span>
                                   {isCurrent && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">● Bu Ay</span>}
                                 </div>
                               </td>
                             )}
-                            <td className={`sticky left-28 z-10 px-5 py-3 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] bg-inherit`}>
-                              <div className="flex items-center gap-2">
+                            <td className={`sticky left-16 sm:left-28 z-10 px-2 sm:px-5 py-3 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] bg-inherit`}>
+                              <div className="flex items-center gap-1 sm:gap-2 truncate max-w-[80px] sm:max-w-[200px]">
                                 {calcType(entry.type)==='income'?<TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0"/>:<TrendingDown className="w-3.5 h-3.5 text-rose-500 shrink-0"/>}
                                 <span className={`text-sm ${ttl}`}>{entry.label}</span>
                                 {STATUS_BADGE[entry.type] && (
@@ -761,7 +761,7 @@ export default function NotesPage() {
                     </tbody>
                     <tfoot className={privacyClass}>
                       <tr className="border-t-2 border-slate-200 dark:border-neutral-700">
-                        <td colSpan={2} className={`sticky left-0 z-20 bg-slate-50/80 dark:bg-neutral-900/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] px-5 py-3.5 text-sm font-bold ${ttl}`}>Genel Toplam</td>
+                        <td colSpan={2} className={`sticky left-0 z-20 bg-slate-50/80 dark:bg-neutral-900/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] px-5 py-3.5 text-sm font-bold ${ttl}`}>{t('Genel Toplam')}</td>
                         <td className="px-5 py-3.5 bg-slate-50/80 dark:bg-neutral-900/50"/>
                         <td className="px-5 py-3.5 text-right bg-slate-50/80 dark:bg-neutral-900/50">
                           {(()=>{

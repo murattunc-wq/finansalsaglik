@@ -1155,7 +1155,7 @@ export default function FinanceDashboard() {
             <div className="hidden sm:block relative w-full sm:max-w-xs transition-all">
               <Search className={`absolute left-3 top-2.5 h-4 w-4 ${muted}`} />
               <input 
-                placeholder="Ara..." 
+                placeholder={t('Ara...')} 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className={`w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-neutral-900 rounded-md text-sm ${title} focus:outline-none border border-transparent focus:border-slate-300 dark:focus:border-neutral-700 transition-colors`} 
@@ -1359,7 +1359,7 @@ export default function FinanceDashboard() {
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-[#18181b] text-white dark:bg-white dark:text-black rounded-md text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap shadow-sm"
             >
-              <Plus className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Yeni Kayıt</span>
+              <Plus className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">{t('Yeni Kayıt')}</span>
             </button>
 
             {/* Action Menu (Verileri Sıfırla, XML) */}
@@ -1491,7 +1491,7 @@ export default function FinanceDashboard() {
           {/* Bar Chart */}
           <div className={`lg:col-span-5 ${card} p-5 flex flex-col`}>
             <h3 className={`font-semibold ${title}`}>{t('Aylık Gider Eğilimi')}</h3>
-            <p className={`text-sm ${muted} mb-4`}>Seçilen zaman periyodu matrisi</p>
+            <p className={`text-sm ${muted} mb-4`}>{t('Seçilen zaman periyodu matrisi')}</p>
             <div className="flex-1 min-h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={engineData.barData} margin={{top:0,right:0,left:0,bottom:0}} barCategoryGap="25%">
@@ -1502,11 +1502,11 @@ export default function FinanceDashboard() {
                     formatter={(val:any) => `₺${Number(val).toLocaleString('tr-TR',{maximumFractionDigits:0})}`}
                     labelFormatter={(label) => {
                       const m = { 'Oca':'Ocak', 'Şub':'Şubat', 'Mar':'Mart', 'Nis':'Nisan', 'May':'Mayıs', 'Haz':'Haziran', 'Tem':'Temmuz', 'Ağu':'Ağustos', 'Eyl':'Eylül', 'Eki':'Ekim', 'Kas':'Kasım', 'Ara':'Aralık' };
-                      return (m as any)[label] || label;
+                      return t((m as any)[label] || label);
                     }}
                   />
                   {/* Unpaid expenses – dark/black bar (bottom of stack) */}
-                  <Bar dataKey="unpaid" stackId="a" name="Ödenmemiş">
+                  <Bar dataKey="unpaid" stackId="a" name={t('Ödenmemiş')}>
                     {engineData.barData.map((entry, index) => (
                       <Cell 
                         key={`unpaid-${index}`} 
@@ -1517,7 +1517,7 @@ export default function FinanceDashboard() {
                     ))}
                   </Bar>
                   {/* Paid expenses – light gray bar (top of stack) */}
-                  <Bar dataKey="paid" stackId="a" name="Ödenmiş">
+                  <Bar dataKey="paid" stackId="a" name={t('Ödenmiş')}>
                     {engineData.barData.map((entry, index) => (
                       <Cell 
                         key={`paid-${index}`} 
@@ -1527,7 +1527,7 @@ export default function FinanceDashboard() {
                       />
                     ))}
                   </Bar>
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#64748b',fontSize:12}} dy={10}/>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#64748b',fontSize:12}} tickFormatter={(val)=>{const m={'Oca':'Ocak','Şub':'Şubat','Mar':'Mart','Nis':'Nisan','May':'Mayıs','Haz':'Haziran','Tem':'Temmuz','Ağu':'Ağustos','Eyl':'Eylül','Eki':'Ekim','Kas':'Kasım','Ara':'Aralık'}; const translated=t((m as any)[val]||val); return translated.substring(0,3);}} dy={10}/>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1536,7 +1536,7 @@ export default function FinanceDashboard() {
           {/* Donut Chart – FIX: center label REMOVED, total shown in legend grid to avoid tooltip overlap */}
           <div className={`lg:col-span-4 ${card} p-5 flex flex-col`}>
             <h3 className={`font-semibold ${title}`}>{t('Gider Dağılımı')}</h3>
-            <p className={`text-sm ${muted} mb-2`}>Seçili Periyot Kategorileri</p>
+            <p className={`text-sm ${muted} mb-2`}>{t('Seçili Periyot Kategorileri')}</p>
             
             {/* Donut – no absolute overlay text, tooltip won't collide */}
             <div className="w-full h-[180px] mt-2">
@@ -1703,7 +1703,7 @@ export default function FinanceDashboard() {
               <div className="flex justify-between items-start mb-1">
                 <div>
                   <h3 className={`font-bold text-base tracking-tight ${title}`}>{t('Birikim Hedefi')}</h3>
-                  <p className={`text-sm ${muted} font-medium`}>%{progressPercent.toFixed(1)} İlerleme</p>
+                  <p className={`text-sm ${muted} font-medium`}>{progressPercent.toFixed(1)}% {t('İlerleme')}</p>
                 </div>
                 <button onClick={()=>{setIsEditingGoal(true);setGoalInputValue(savingGoal.toString());}} className={`${muted} hover:text-slate-900 dark:hover:text-white`}><Edit2 className="w-3.5 h-3.5"/></button>
               </div>
@@ -1739,7 +1739,7 @@ export default function FinanceDashboard() {
                   <p className={`text-sm ${muted} mt-0.5`}>Toplam {engineData.activeList.filter(i => !i.isPaid).length} aktif yükümlülük</p>
                 </div>
                 <button onClick={()=>setIsModalOpen(true)} className={`flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-neutral-700 rounded-md text-xs font-medium ${title} hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors`}>
-                  <Plus className="w-3.5 h-3.5"/> Ekle
+                  <Plus className="w-3.5 h-3.5"/> {t('Ekle')}
                 </button>
               </div>
               <div className="space-y-3">
@@ -2029,7 +2029,7 @@ export default function FinanceDashboard() {
                 </tr>
                 <tr>
                   <td className={`sticky left-0 z-10 bg-slate-50/80 dark:bg-neutral-900/50 px-5 py-3.5 font-bold ${title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] border-t border-slate-200/60 dark:border-neutral-800/60`}>
-                    Kümülatif Bakiye (Tahmini)
+                    {t('Kümülatif Bakiye (Tahmini)')}
                   </td>
                   {engineData.matrixColumns.map((m, idx) => {
                     let cumulative = baseCapital;
