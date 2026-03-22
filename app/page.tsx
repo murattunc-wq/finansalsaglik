@@ -208,7 +208,17 @@ export default function FinanceDashboard() {
   const [dbFetchRan, setDbFetchRan] = useState(false);
 
   useEffect(() => {
-    if (!sessionUser?.email || dbFetchRan) return;
+    if (!sessionUser?.email) return;
+    const lastUser = localStorage.getItem('fcv2_currentUser');
+    if (lastUser && lastUser !== sessionUser.email) {
+      Object.keys(localStorage).forEach(k => { if (k.startsWith('fcv2_')) localStorage.removeItem(k); });
+      localStorage.setItem('fcv2_currentUser', sessionUser.email);
+      window.location.reload();
+      return;
+    }
+    if (!lastUser) localStorage.setItem('fcv2_currentUser', sessionUser.email);
+
+    if (dbFetchRan) return;
     let isStale = false;
     fetch(`/api/user/data?t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).then(res => {
       if (isStale) return;
@@ -1280,7 +1290,10 @@ export default function FinanceDashboard() {
                   </Link>
 
                   <button
-                    onClick={() => signOut({ callbackUrl: '/login' })}
+                    onClick={() => {
+                      Object.keys(localStorage).forEach(k => { if (k.startsWith('fcv2_')) localStorage.removeItem(k); });
+                      signOut({ callbackUrl: '/login' });
+                    }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

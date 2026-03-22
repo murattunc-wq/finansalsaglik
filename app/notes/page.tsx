@@ -356,8 +356,18 @@ export default function NotesPage() {
 
   // DB Sync Load
   useEffect(() => {
-    if (sessionUser?.email) {
-      fetch('/api/user/data')
+    if (!sessionUser?.email) return;
+
+    const lastUser = localStorage.getItem('fcv2_currentUser');
+    if (lastUser && lastUser !== sessionUser.email) {
+      Object.keys(localStorage).forEach(k => { if (k.startsWith('fcv2_')) localStorage.removeItem(k); });
+      localStorage.setItem('fcv2_currentUser', sessionUser.email);
+      window.location.reload();
+      return;
+    }
+    if (!lastUser) localStorage.setItem('fcv2_currentUser', sessionUser.email);
+
+    fetch('/api/user/data')
         .then(r => r.json())
         .then(res => {
           if (res.data) {
@@ -365,7 +375,6 @@ export default function NotesPage() {
             if (res.data.customRules && Array.isArray(res.data.customRules)) setCustomRules(res.data.customRules);
           }
         }).catch(err => console.error('Load sync fail', err));
-    }
   }, [sessionUser?.email]);
 
   // DB Sync Save
@@ -583,7 +592,7 @@ export default function NotesPage() {
                     {t('Yardım / SSS')}
                   </Link>
 
-                  <button onClick={()=>signOut({callbackUrl:'/login'})} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium">
+                  <button onClick={() => { Object.keys(localStorage).forEach(k => { if (k.startsWith('fcv2_')) localStorage.removeItem(k); }); signOut({ callbackUrl: '/login' }); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium">
                     <Trash2 className="w-4 h-4"/> {t('Çıkış Yap')}
                   </button>
                 </div>
