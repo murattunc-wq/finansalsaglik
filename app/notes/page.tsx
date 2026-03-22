@@ -465,7 +465,7 @@ export default function NotesPage() {
         <div className="max-w-[1500px] mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-4 shrink-0 flex-1 sm:flex-none">
             <div className="p-2 -ml-2 -mt-2 -mb-2 flex shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center border border-slate-200 dark:border-neutral-700 shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center">
                 <span className="text-white dark:text-black text-sm font-bold">₺</span>
               </div>
             </div>
