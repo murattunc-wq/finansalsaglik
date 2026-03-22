@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import {
   Moon, Sun, Calculator, FileEdit, Trash2, TrendingDown, TrendingUp,
-  Sparkles, Info, Plus, X, ChevronDown, ChevronUp, Settings2, Eye, EyeOff, Lock
+  Sparkles, Info, Plus, X, ChevronDown, ChevronUp, Settings2, Eye, EyeOff, Lock, Wallet
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -474,23 +474,61 @@ export default function NotesPage() {
               <Link href="/notes" className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">Notlarım</Link>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => setTheme(isDark?'light':'dark')} className={`p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors`}>
-              {isDark?<Sun className="w-5 h-5"/>:<Moon className="w-5 h-5"/>}
-            </button>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="relative">
-              <button onClick={(e)=>{e.stopPropagation();setIsProfileOpen(p=>!p);}} className="flex p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 text-sm font-semibold" style={{background:sessionUser?.image?'transparent':'#e2e8f0'}}>
-                  {sessionUser?.image?<img src={sessionUser.image} alt="" className="w-8 h-8 rounded-full"/>:<span className="text-slate-600">{(sessionUser?.name||'U').charAt(0).toUpperCase()}</span>}
+              <button 
+                onClick={(e)=>{e.stopPropagation();setIsProfileOpen(p=>!p);}} 
+                className={`flex items-center gap-2 rounded-full sm:rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 p-1 transition-colors outline-none focus:outline-none`}
+              >
+                <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 font-semibold text-sm overflow-hidden shrink-0 shadow-sm`} style={{background:sessionUser?.image?'transparent':'#e2e8f0'}}>
+                  {sessionUser?.image?<img src={sessionUser.image} alt="avatar" className="w-full h-full object-cover"/>:<span className="text-slate-600 dark:text-neutral-300">{(sessionUser?.name||sessionUser?.email||'U').charAt(0).toUpperCase()}</span>}
                 </div>
               </button>
               {isProfileOpen && (
-                <div onClick={e=>e.stopPropagation()} className={`absolute right-0 top-full mt-2 w-56 ${card} z-50 overflow-hidden`}>
+                <div onClick={e=>e.stopPropagation()} className={`absolute right-0 top-full mt-2 w-72 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 z-50 overflow-hidden transition-all`}>
                   <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800">
                     <p className={`text-sm font-semibold ${ttl} truncate`}>{sessionUser?.name||'Kullanıcı'}</p>
                     <p className={`text-xs ${muted} truncate`}>{sessionUser?.email||''}</p>
                   </div>
-                  <button onClick={()=>signOut({callbackUrl:'/login'})} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium">
+
+                  <div className="py-1 border-b border-slate-100 dark:border-neutral-800">
+                    <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`w-full text-left px-4 py-2.5 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors flex items-center gap-3`}>
+                      {isDark ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>} 
+                      {isDark ? 'Açık Tema' : 'Koyu Tema'}
+                    </button>
+                    <button onClick={handleTogglePrivacy} className={`w-full text-left px-4 py-2.5 text-sm font-medium ${isPrivacyMode ? 'text-indigo-600 dark:text-indigo-400' : muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors flex items-center gap-3`}>
+                      {isPrivacyMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {isPrivacyMode ? 'Gizliliği Kapat' : 'Gizliliği Aç'}
+                    </button>
+                  </div>
+
+                  <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className={`text-xs font-semibold ${ttl} uppercase tracking-wider`}>Bildirimler</h3>
+                      <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 Yeni</span>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+                        <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div>
+                        <p className={`text-sm font-medium ${ttl}`}>Maaş yattı</p>
+                        <p className={`text-xs ${muted} mt-0.5`}>Hesabınıza 130.000 TL transfer edildi.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {savedPin ? (
+                    <button onClick={() => { setPinAction('remove'); setPinInput(''); setIsProfileOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-3`}>
+                      <Lock className="w-4 h-4"/> PIN Kaldır
+                    </button>
+                  ) : (
+                    <button onClick={() => { setPinAction('set'); setPinInput(''); setIsProfileOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-3`}>
+                      <Lock className="w-4 h-4"/> PIN Belirle
+                    </button>
+                  )}
+
+                  <button onClick={()=>signOut({callbackUrl:'/login'})} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium">
                     <Trash2 className="w-4 h-4"/> Çıkış Yap
                   </button>
                 </div>
