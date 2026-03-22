@@ -1134,11 +1134,11 @@ export default function FinanceDashboard() {
             </div>
             
             {/* Tabs */}
-            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0">
-               <Link href="/" className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">
+            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-neutral-900/50 p-1 rounded-lg shrink-0 relative z-50">
+               <Link href="/" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-[#18181b] text-slate-900 dark:text-white shadow-sm transition-all border border-slate-200 dark:border-neutral-800">
                  Kokpit
                </Link>
-               <Link href="/notes" className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">
+               <Link href="/notes" onClick={(e) => e.stopPropagation()} className="px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-all">
                  Notlarım
                </Link>
             </div>
@@ -1157,9 +1157,49 @@ export default function FinanceDashboard() {
 
           {/* Right: Profile Menu */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Desktop Actions */}
+            <div className="hidden sm:flex items-center gap-2">
+              <div className="relative">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsNotificationsOpen(prev => !prev); setIsActionMenuOpen(false); setIsCalendarOpen(false); setIsProfileOpen(false); }}
+                  className={`relative p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white transition-colors`}
+                >
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-black" />
+                </button>
+                {/* Desktop Notifications Dropdown */}
+                {isNotificationsOpen && (
+                  <div onClick={e => e.stopPropagation()} className={`absolute right-0 top-full mt-2 w-72 ${card} rounded-xl shadow-xl border border-slate-100 dark:border-neutral-800 overflow-hidden z-50`}>
+                    <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800 flex justify-between items-center">
+                      <h3 className={`text-sm font-semibold ${title}`}>Bildirimler</h3>
+                      <span className="text-[10px] font-medium bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 px-2 py-0.5 rounded-full">1 Yeni</span>
+                    </div>
+                    <div className="p-4 flex flex-col gap-3">
+                      <div className="flex gap-3 items-start">
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+                          <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div>
+                          <p className={`text-sm font-medium ${title}`}>Maaş yattı</p>
+                          <p className={`text-xs ${muted} mt-0.5`}>Hesabınıza 130.000 TL transfer edildi.</p>
+                          <span className={`text-[10px] ${muted} mt-1 block`}>Az önce</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button onClick={handleTogglePrivacy} className={`p-2 rounded-full transition-colors ${isPrivacyMode ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-500/20' : `${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white`}`}>
+                {isPrivacyMode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+              <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`p-2 rounded-full ${muted} hover:bg-slate-100 dark:hover:bg-neutral-800 hover:text-slate-900 dark:hover:text-white transition-colors`}>
+                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+            </div>
+
             <div className="relative">
               <button 
-                onClick={(e) => { e.stopPropagation(); setIsProfileOpen(prev => !prev); setIsActionMenuOpen(false); setIsCalendarOpen(false); }}
+                onClick={(e) => { e.stopPropagation(); setIsProfileOpen(prev => !prev); setIsActionMenuOpen(false); setIsCalendarOpen(false); setIsNotificationsOpen(false); }}
                 className={`flex items-center gap-2 rounded-full sm:rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 p-1 transition-colors outline-none focus:outline-none`}
               >
                 <div className={`w-9 h-9 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border border-slate-300 dark:border-neutral-700 font-semibold text-sm overflow-hidden shrink-0 shadow-sm`}
@@ -1181,7 +1221,7 @@ export default function FinanceDashboard() {
                     <p className={`text-xs ${muted} truncate`}>{sessionUser?.email || ''}</p>
                   </div>
 
-                  <div className="py-1 border-b border-slate-100 dark:border-neutral-800">
+                  <div className="py-1 border-b border-slate-100 dark:border-neutral-800 sm:hidden">
                     <button onClick={() => setTheme(isDark ? 'light' : 'dark')} className={`w-full text-left px-4 py-2.5 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors flex items-center gap-3`}>
                       {isDark ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>} 
                       {isDark ? 'Açık Tema' : 'Koyu Tema'}
@@ -1545,17 +1585,17 @@ export default function FinanceDashboard() {
             
             {/* Mobile filter view */}
             <div className="sm:hidden px-5 py-3 border-b border-slate-100 dark:border-neutral-800 bg-slate-50 dark:bg-[#09090b]">
-              <div className="flex bg-slate-200 dark:bg-neutral-800 p-1 rounded-lg w-full">
-                <button onClick={()=>setTxnFilter('all')} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='all' ? 'bg-white dark:bg-[#18181b] shadow text-slate-900 dark:text-white' : 'text-slate-500'}`}>Tümü</button>
-                <button onClick={()=>setTxnFilter('income')} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='income' ? 'bg-white dark:bg-[#18181b] shadow text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>Gelir</button>
-                <button onClick={()=>setTxnFilter('expense')} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='expense' ? 'bg-white dark:bg-[#18181b] shadow text-rose-600 dark:text-rose-400' : 'text-slate-500'}`}>Gider</button>
+              <div className="flex bg-slate-200 dark:bg-neutral-800 p-1 rounded-lg w-full relative z-50">
+                <button onClick={(e)=>{e.stopPropagation();setTxnFilter('all')}} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='all' ? 'bg-white dark:bg-[#18181b] shadow text-slate-900 dark:text-white' : 'text-slate-500'}`}>Tümü</button>
+                <button onClick={(e)=>{e.stopPropagation();setTxnFilter('income')}} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='income' ? 'bg-white dark:bg-[#18181b] shadow text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>Gelir</button>
+                <button onClick={(e)=>{e.stopPropagation();setTxnFilter('expense')}} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='expense' ? 'bg-white dark:bg-[#18181b] shadow text-rose-600 dark:text-rose-400' : 'text-slate-500'}`}>Gider</button>
               </div>
             </div>
             <div className="overflow-y-auto max-h-[420px]">
               <table className="w-full text-sm text-left table-fixed">
                 <thead className={`text-xs font-semibold uppercase tracking-wider border-b border-slate-100 dark:border-neutral-800 sticky top-0 bg-white dark:bg-[#09090b] z-10`}>
                   <tr className="group">
-                    <th className="px-3 sm:px-4 py-3 w-10">
+                    <th className="hidden sm:table-cell px-3 sm:px-4 py-3 w-10">
                       <input 
                         type="checkbox" 
                         className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.size>0 ? 'opacity-100 sm:opacity-0' : 'opacity-0'} group-hover:opacity-100`}
@@ -1566,7 +1606,8 @@ export default function FinanceDashboard() {
                     <th className={`px-2 py-3 w-auto ${muted} text-left`}>İşlem Adı</th>
                     <th className={`px-2 py-3 w-24 sm:w-28 ${muted} text-left`}>Tarih</th>
                     <th className={`hidden sm:table-cell px-5 py-3 w-24 ${muted} text-left`}>Tür</th>
-                    <th className={`px-3 py-3 w-28 text-right ${muted}`}>Tutar</th>
+                    <th className={`px-2 py-3 w-28 text-right ${muted}`}>Tutar</th>
+                    <th className="w-8"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-neutral-800/60">
@@ -1575,7 +1616,7 @@ export default function FinanceDashboard() {
                   )}
                   {finalFilteredTxns.map(txn => (
                     <tr key={txn.id} className="hover:bg-slate-50/70 dark:hover:bg-neutral-900/40 transition-colors group">
-                      <td className="px-3 sm:px-4 py-3.5">
+                      <td className="hidden sm:table-cell px-3 sm:px-4 py-3.5">
                         <input 
                           type="checkbox" 
                           className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.has(txn.id) ? 'opacity-100 sm:opacity-0' : 'opacity-0'} group-hover:opacity-100`}
@@ -1600,34 +1641,33 @@ export default function FinanceDashboard() {
                           {txn.type==='income'?'Gelir':'Gider'}
                         </span>
                       </td>
-                      <td className={`px-3 py-3.5 text-right font-semibold tabular-nums ${txn.type==='income'?'text-emerald-600 dark:text-emerald-400':title}`}>
-                        <div className="flex items-center justify-end gap-1">
-                          ₺{Math.abs(txn.amount).toLocaleString('tr-TR',{maximumFractionDigits:0})}
-                          
-                          {/* ⋮ menu */}
-                          <div className="relative ml-1">
-                            <button
-                              onClick={e => { e.stopPropagation(); setActiveTxnMenu(activeTxnMenu===txn.id?null:txn.id); }}
-                              className={`p-1 rounded-md ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none`}
-                            >
-                              <MoreVertical className="w-4 h-4"/>
-                            </button>
-                            {activeTxnMenu===txn.id && (
-                              <div className="absolute right-7 top-0 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden min-w-[100px]">
-                                <button
-                                  onClick={e => { 
-                                    e.stopPropagation(); 
-                                    if(txn.isRecurringBase) setHiddenProjections(prev=>[...prev, txn.id]);
-                                    else handleTxnDelete(txn.id);
-                                    setActiveTxnMenu(null);
-                                  }}
-                                  className="px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 w-full text-left font-medium"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5"/> Sil
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                      <td className={`px-2 py-3.5 text-right font-semibold tabular-nums ${txn.type==='income'?'text-emerald-600 dark:text-emerald-400':title}`}>
+                        ₺{Math.abs(txn.amount).toLocaleString('tr-TR',{maximumFractionDigits:0})}
+                      </td>
+                      <td className="w-8 pr-4 py-3.5 text-right">
+                        {/* ⋮ menu */}
+                        <div className="relative">
+                          <button
+                            onClick={e => { e.stopPropagation(); setActiveTxnMenu(activeTxnMenu===txn.id?null:txn.id); }}
+                            className={`p-1 rounded-md ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none`}
+                          >
+                            <MoreVertical className="w-4 h-4"/>
+                          </button>
+                          {activeTxnMenu===txn.id && (
+                            <div className="absolute right-7 top-0 bg-white dark:bg-[#09090b] border border-slate-200 dark:border-neutral-800 rounded-lg shadow-lg z-50 overflow-hidden min-w-[100px]">
+                              <button
+                                onClick={e => { 
+                                  e.stopPropagation(); 
+                                  if(txn.isRecurringBase) setHiddenProjections(prev=>[...prev, txn.id]);
+                                  else handleTxnDelete(txn.id);
+                                  setActiveTxnMenu(null);
+                                }}
+                                className="px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 w-full text-left font-medium"
+                              >
+                                <Trash2 className="w-3.5 h-3.5"/> Sil
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
