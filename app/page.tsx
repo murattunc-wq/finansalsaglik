@@ -1619,7 +1619,7 @@ export default function FinanceDashboard() {
                     <th className="hidden sm:table-cell px-3 sm:px-4 py-3 w-10">
                       <input 
                         type="checkbox" 
-                        className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.size>0 ? 'opacity-100 sm:opacity-0' : 'opacity-0'} group-hover:opacity-100`}
+                        className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.size>0 ? 'opacity-100' : 'opacity-0'} group-hover:opacity-100`}
                         checked={selectedTxns.size === engineData.allTxns.length && engineData.allTxns.length > 0}
                         onChange={() => handleToggleSelectAll(engineData.allTxns.map(t=>t.id))}
                       />
@@ -1640,7 +1640,7 @@ export default function FinanceDashboard() {
                       <td className="hidden sm:table-cell px-3 sm:px-4 py-3.5">
                         <input 
                           type="checkbox" 
-                          className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.has(txn.id) ? 'opacity-100 sm:opacity-0' : 'opacity-0'} group-hover:opacity-100`}
+                          className={`rounded border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 focus:ring-indigo-500 w-4 h-4 cursor-pointer transition-opacity ${selectedTxns.has(txn.id) ? 'opacity-100' : 'opacity-0'} group-hover:opacity-100`}
                           checked={selectedTxns.has(txn.id)}
                           onChange={() => handleToggleTxnSelect(txn.id)}
                         />
