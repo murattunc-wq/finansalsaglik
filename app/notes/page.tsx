@@ -4,10 +4,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import {
   Moon, Sun, Calculator, FileEdit, Trash2, TrendingDown, TrendingUp,
-  Sparkles, Info, Plus, X, ChevronDown, ChevronUp, Settings2, Eye, EyeOff, Lock, Wallet
+  Sparkles, Info, Plus, X, ChevronDown, ChevronUp, Settings2, Eye, EyeOff, Lock, Wallet, Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
+import { useLanguage } from '@/components/LanguageProvider';
 
 /* ============================================================
    HELPERS
@@ -313,6 +314,7 @@ export default function NotesPage() {
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
   const sessionUser = session?.user;
+  const { t, locale, setLocale } = useLanguage();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -563,6 +565,19 @@ export default function NotesPage() {
                     </button>
                   )}
 
+                  <div className="px-4 py-3 text-sm font-medium border-b border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                    <span className={`flex items-center gap-3 ${muted}`}><Globe className="w-4 h-4" /> Dil / Language</span>
+                    <div className="flex bg-slate-100 dark:bg-neutral-900 p-0.5 rounded-md">
+                      <button onClick={(e) => { e.stopPropagation(); setLocale('tr'); }} className={`px-2 py-1 text-xs font-bold rounded min-w-[32px] transition-colors ${locale === 'tr' ? 'bg-white dark:bg-neutral-800 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}`}>TR</button>
+                      <button onClick={(e) => { e.stopPropagation(); setLocale('en'); }} className={`px-2 py-1 text-xs font-bold rounded min-w-[32px] transition-colors ${locale === 'en' ? 'bg-white dark:bg-neutral-800 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}`}>EN</button>
+                    </div>
+                  </div>
+
+                  <Link href="/faq" onClick={() => setIsProfileOpen(false)} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-3`}>
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    Yardım / SSS
+                  </Link>
+
                   <button onClick={()=>signOut({callbackUrl:'/login'})} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium">
                     <Trash2 className="w-4 h-4"/> Çıkış Yap
                   </button>
@@ -585,14 +600,14 @@ export default function NotesPage() {
               <div className="px-5 py-3.5 border-b border-slate-100 dark:border-neutral-800 flex items-center justify-between bg-slate-50/50 dark:bg-neutral-900/30 shrink-0">
                 <div className="flex items-center gap-2">
                   <FileEdit className="w-4 h-4 text-indigo-500"/>
-                  <h2 className={`font-semibold text-sm ${ttl}`}>Hesaplama Defteri</h2>
+                  <h2 className={`font-semibold text-sm ${ttl}`}>{t('Hesaplama Defteri')}</h2>
                 </div>
                 <div className="flex items-center gap-3">
                   <button onClick={handleTogglePrivacy} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${isPrivacyMode ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400' : `hover:bg-slate-200 dark:hover:bg-neutral-800 ${muted}`}`}>
                     {isPrivacyMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    {isPrivacyMode ? 'Gizli' : 'Gizle'}
+                    {isPrivacyMode ? t('Gizli') : t('Gizle')}
                   </button>
-                  {notes.length>0 && <button onClick={()=>setNotes('')} className={`text-xs ${muted} hover:text-rose-500 transition-colors`}>Temizle</button>}
+                  {notes.length>0 && <button onClick={()=>setNotes('')} className={`text-xs ${muted} hover:text-rose-500 transition-colors`}>{t('Temizle')}</button>}
                   {notes==='' && <button onClick={()=>setNotes(DEMO_NOTES)} className="text-xs font-medium text-indigo-500 hover:text-indigo-700">✦ Demo Yükle</button>}
                 </div>
               </div>
@@ -612,7 +627,7 @@ export default function NotesPage() {
                 className="w-full px-5 py-3.5 flex items-center justify-between border-b border-transparent hover:bg-slate-50/50 dark:hover:bg-neutral-900/30 transition-colors">
                 <div className="flex items-center gap-2">
                   <Settings2 className="w-4 h-4 text-slate-400"/>
-                  <span className={`font-semibold text-sm ${ttl}`}>Format Kuralları</span>
+                  <span className={`font-semibold text-sm ${ttl}`}>{t('Format Kuralları')}</span>
                   {customRules.length>0 && <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 px-2 py-0.5 rounded-full">{customRules.length} kural</span>}
                 </div>
                 {rulesOpen?<ChevronUp className="w-4 h-4 text-slate-400"/>:<ChevronDown className="w-4 h-4 text-slate-400"/>}
@@ -626,11 +641,11 @@ export default function NotesPage() {
                       Özel kurallar yerleşik kurallara göre önceliklidir.
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input type="text" placeholder="anahtar kelime..." value={newKw}
                       onChange={e=>setNewKw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addRule()}
                       className={`flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-[#18181b] ${ttl} focus:outline-none focus:border-indigo-400 transition-colors`}/>
-                    <div className="flex flex-wrap rounded-lg overflow-hidden border border-slate-200 dark:border-neutral-800 shrink-0">
+                    <div className="flex flex-wrap rounded-lg overflow-hidden border border-slate-200 dark:border-neutral-800 shrink-0 w-full sm:w-auto">
                       {RULE_TYPE_OPTIONS.map((opt, i) => (
                         <button key={opt.value} onClick={()=>setNewKwType(opt.value)}
                           className={`px-3 py-2 text-xs font-semibold transition-colors ${i>0?'border-l border-slate-200 dark:border-neutral-800':''} ${newKwType===opt.value ? opt.active : `bg-white dark:bg-[#18181b] ${muted}`}`}>

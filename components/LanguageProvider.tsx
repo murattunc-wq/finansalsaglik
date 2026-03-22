@@ -55,6 +55,8 @@ const dictionary: Record<string, Record<Locale, string>> = {
   "Kural / İşlem": { tr: "Kural / İşlem", en: "Rule / Transaction" },
   "Arama sonucuna uygun düzenli gider/gelir bulunamadı.": { tr: "Arama sonucuna uygun düzenli gider/gelir bulunamadı.", en: "No recurring expenses/income matching the search." },
   "Kayıt bulunamadı.": { tr: "Kayıt bulunamadı.", en: "No records found." },
+  "Aylık Net": { tr: "Aylık Net", en: "Monthly Net" },
+  "Dönem Başı Nakit (Açılış)": { tr: "Dönem Başı Nakit (Açılış)", en: "Opening Cash Balance" },
   
   // Profile Menu
   "Karanlık Mod": { tr: "Karanlık Mod", en: "Dark Mode" },

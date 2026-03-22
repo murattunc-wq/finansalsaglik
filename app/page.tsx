@@ -1274,6 +1274,11 @@ export default function FinanceDashboard() {
                     </div>
                   </div>
 
+                  <Link href="/faq" onClick={() => setIsProfileOpen(false)} className={`w-full text-left px-4 py-3 text-sm font-medium ${muted} hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-neutral-900 border-b border-slate-100 dark:border-neutral-800 transition-colors flex items-center gap-3`}>
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    Yardım / SSS
+                  </Link>
+
                   <button
                     onClick={() => signOut({ callbackUrl: '/login' })}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium"
@@ -1394,7 +1399,7 @@ export default function FinanceDashboard() {
           <div className={`${card} p-5 h-36 flex flex-col justify-between group/base`}>
             <div className={`flex items-center gap-2 ${muted}`}>
               <Wallet className="w-4 h-4" />
-              <span className="text-sm font-medium">Toplam Bakiye</span>
+              <span className="text-sm font-medium">{t('Toplam Bakiye')}</span>
               <button onClick={() => { setIsEditingBase(true); setBaseInput(baseCapital.toString()); }} className="opacity-0 group-hover/base:opacity-100 transition-opacity p-1 ml-auto hover:bg-slate-100 dark:hover:bg-neutral-800 rounded">
                  <Edit2 className="w-3.5 h-3.5 text-slate-400 hover:text-indigo-500" />
               </button>
@@ -1420,7 +1425,7 @@ export default function FinanceDashboard() {
           </div>
           {/* Net Profit */}
           <div className={`${card} p-5 h-36 flex flex-col justify-between`}>
-            <div className={`flex items-center gap-2 ${muted}`}><TrendingUp className="w-4 h-4" /><span className="text-sm font-medium">Net Nakit Akışı</span></div>
+            <div className={`flex items-center gap-2 ${muted}`}><TrendingUp className="w-4 h-4" /><span className="text-sm font-medium">{t('Net Nakit Akışı')}</span></div>
             <div className="flex items-baseline justify-between mt-auto">
               <h2 className={`text-3xl font-bold tracking-tight ${title}`}>₺{(engineData.totalIncome-engineData.totalExpense).toLocaleString('tr-TR',{maximumFractionDigits:0})}</h2>
               <span className="flex items-center text-emerald-600 dark:text-emerald-500 text-sm font-semibold"><ArrowUpRight className="w-4 h-4"/>8.5%</span>
@@ -1428,7 +1433,7 @@ export default function FinanceDashboard() {
           </div>
           {/* Expenses */}
           <div className={`${card} p-5 h-36 flex flex-col justify-between`}>
-            <div className={`flex items-center gap-2 ${muted}`}><span className="font-mono font-bold text-sm">₺</span><span className="text-sm font-medium">Toplam Gider</span></div>
+            <div className={`flex items-center gap-2 ${muted}`}><span className="font-mono font-bold text-sm">₺</span><span className="text-sm font-medium">{t('Toplam Gider')}</span></div>
             <div className="flex items-baseline justify-between mt-auto">
               <h2 className={`text-3xl font-bold tracking-tight ${title}`}>₺{engineData.totalExpense.toLocaleString('tr-TR',{maximumFractionDigits:0})}</h2>
               <span className="flex items-center text-rose-500 dark:text-rose-400 text-sm font-semibold"><ArrowDownRight className="w-4 h-4"/>5.5%</span>
@@ -1436,7 +1441,7 @@ export default function FinanceDashboard() {
           </div>
           {/* Installments */}
           <div className={`${card} p-5 h-36 flex flex-col justify-between`}>
-            <div className={`flex items-center gap-2 ${muted}`}><FileText className="w-4 h-4" /><span className="text-sm font-medium">Ödenmemiş Taksitler</span></div>
+            <div className={`flex items-center gap-2 ${muted}`}><FileText className="w-4 h-4" /><span className="text-sm font-medium">{t('Ödenmemiş Taksitler')}</span></div>
             <div className="flex items-baseline justify-between mt-auto">
               <h2 className={`text-3xl font-bold tracking-tight ${title}`}>₺{engineData.totalPendingDebts.toLocaleString('tr-TR',{maximumFractionDigits:0})}</h2>
               {engineData.unpaidCount > 0 ? (
@@ -1456,7 +1461,7 @@ export default function FinanceDashboard() {
           {/* Income Sources */}
           <div className={`lg:col-span-3 ${card} p-6 flex flex-col`}>
             <div className="flex justify-between items-start mb-6">
-              <h3 className={`font-semibold ${title}`}>Gelir Kaynakları</h3>
+              <h3 className={`font-semibold ${title}`}>{t('Gelir Kaynakları')}</h3>
               <button className={`${muted} hover:text-slate-900 dark:hover:text-white`}><ArrowUpRight className="w-4 h-4"/></button>
             </div>
             <p className={`text-sm ${muted} mb-1`}>Seçili Aralık Geliri</p>
@@ -1485,7 +1490,7 @@ export default function FinanceDashboard() {
 
           {/* Bar Chart */}
           <div className={`lg:col-span-5 ${card} p-5 flex flex-col`}>
-            <h3 className={`font-semibold ${title}`}>Aylık Gider Eğilimi</h3>
+            <h3 className={`font-semibold ${title}`}>{t('Aylık Gider Eğilimi')}</h3>
             <p className={`text-sm ${muted} mb-4`}>Seçilen zaman periyodu matrisi</p>
             <div className="flex-1 min-h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -1530,7 +1535,7 @@ export default function FinanceDashboard() {
 
           {/* Donut Chart – FIX: center label REMOVED, total shown in legend grid to avoid tooltip overlap */}
           <div className={`lg:col-span-4 ${card} p-5 flex flex-col`}>
-            <h3 className={`font-semibold ${title}`}>Gider Dağılımı</h3>
+            <h3 className={`font-semibold ${title}`}>{t('Gider Dağılımı')}</h3>
             <p className={`text-sm ${muted} mb-2`}>Seçili Periyot Kategorileri</p>
             
             {/* Donut – no absolute overlay text, tooltip won't collide */}
@@ -1584,9 +1589,9 @@ export default function FinanceDashboard() {
               <div className="flex items-center gap-3">
                 {/* Filter Tabs */}
                 <div className="flex bg-slate-100 dark:bg-neutral-800/80 p-0.5 rounded-lg border border-slate-200/60 dark:border-neutral-700/50 hidden sm:flex">
-                  <button onClick={()=>setTxnFilter('all')} className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${txnFilter==='all' ? 'bg-white dark:bg-[#18181b] shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}>Tümü</button>
-                  <button onClick={()=>setTxnFilter('income')} className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${txnFilter==='income' ? 'bg-white dark:bg-[#18181b] shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-emerald-600 dark:text-neutral-400 dark:hover:text-emerald-400'}`}>Gelir</button>
-                  <button onClick={()=>setTxnFilter('expense')} className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${txnFilter==='expense' ? 'bg-white dark:bg-[#18181b] shadow-sm text-rose-600 dark:text-rose-400' : 'text-slate-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400'}`}>Gider</button>
+                  <button onClick={()=>setTxnFilter('all')} className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${txnFilter==='all' ? 'bg-white dark:bg-[#18181b] shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-neutral-400 dark:hover:text-neutral-200'}`}>{t('Tümü')}</button>
+                  <button onClick={()=>setTxnFilter('income')} className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${txnFilter==='income' ? 'bg-white dark:bg-[#18181b] shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-emerald-600 dark:text-neutral-400 dark:hover:text-emerald-400'}`}>{t('Gelir')}</button>
+                  <button onClick={()=>setTxnFilter('expense')} className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${txnFilter==='expense' ? 'bg-white dark:bg-[#18181b] shadow-sm text-rose-600 dark:text-rose-400' : 'text-slate-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400'}`}>{t('Gider')}</button>
                 </div>
                 {selectedTxns.size > 0 && (
                   <button 
@@ -1602,9 +1607,9 @@ export default function FinanceDashboard() {
             {/* Mobile filter view */}
             <div className="sm:hidden px-5 py-3 border-b border-slate-100 dark:border-neutral-800 bg-slate-50 dark:bg-[#09090b]">
               <div className="flex bg-slate-200 dark:bg-neutral-800 p-1 rounded-lg w-full relative z-50">
-                <button onClick={(e)=>{e.stopPropagation();setTxnFilter('all')}} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='all' ? 'bg-white dark:bg-[#18181b] shadow text-slate-900 dark:text-white' : 'text-slate-500'}`}>Tümü</button>
-                <button onClick={(e)=>{e.stopPropagation();setTxnFilter('income')}} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='income' ? 'bg-white dark:bg-[#18181b] shadow text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>Gelir</button>
-                <button onClick={(e)=>{e.stopPropagation();setTxnFilter('expense')}} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='expense' ? 'bg-white dark:bg-[#18181b] shadow text-rose-600 dark:text-rose-400' : 'text-slate-500'}`}>Gider</button>
+                <button onClick={(e)=>{e.stopPropagation();setTxnFilter('all')}} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='all' ? 'bg-white dark:bg-[#18181b] shadow text-slate-900 dark:text-white' : 'text-slate-500'}`}>{t('Tümü')}</button>
+                <button onClick={(e)=>{e.stopPropagation();setTxnFilter('income')}} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='income' ? 'bg-white dark:bg-[#18181b] shadow text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>{t('Gelir')}</button>
+                <button onClick={(e)=>{e.stopPropagation();setTxnFilter('expense')}} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${txnFilter==='expense' ? 'bg-white dark:bg-[#18181b] shadow text-rose-600 dark:text-rose-400' : 'text-slate-500'}`}>{t('Gider')}</button>
               </div>
             </div>
             <div className="overflow-y-auto max-h-[420px]">
@@ -1619,10 +1624,10 @@ export default function FinanceDashboard() {
                         onChange={() => handleToggleSelectAll(engineData.allTxns.map(t=>t.id))}
                       />
                     </th>
-                    <th className={`px-4 py-3 w-auto ${muted} text-left`}>İşlem Adı</th>
-                    <th className={`px-2 py-3 w-24 sm:w-28 ${muted} text-left`}>Tarih</th>
-                    <th className={`hidden sm:table-cell px-5 py-3 w-24 ${muted} text-left`}>Tür</th>
-                    <th className={`px-2 py-3 w-28 text-right ${muted}`}>Tutar</th>
+                    <th className={`px-4 py-3 w-auto ${muted} text-left`}>{t('İşlem Adı')}</th>
+                    <th className={`px-2 py-3 w-24 sm:w-28 ${muted} text-left`}>{t('Tarih')}</th>
+                    <th className={`hidden sm:table-cell px-5 py-3 w-24 ${muted} text-left`}>{t('Tür')}</th>
+                    <th className={`px-2 py-3 w-28 text-right ${muted}`}>{t('Tutar')}</th>
                     <th className="w-8"></th>
                   </tr>
                 </thead>
@@ -1697,7 +1702,7 @@ export default function FinanceDashboard() {
             <div className={`${card} p-6 flex flex-col`}>
               <div className="flex justify-between items-start mb-1">
                 <div>
-                  <h3 className={`font-bold text-base tracking-tight ${title}`}>Birikim Hedefi</h3>
+                  <h3 className={`font-bold text-base tracking-tight ${title}`}>{t('Birikim Hedefi')}</h3>
                   <p className={`text-sm ${muted} font-medium`}>%{progressPercent.toFixed(1)} İlerleme</p>
                 </div>
                 <button onClick={()=>{setIsEditingGoal(true);setGoalInputValue(savingGoal.toString());}} className={`${muted} hover:text-slate-900 dark:hover:text-white`}><Edit2 className="w-3.5 h-3.5"/></button>
@@ -1829,15 +1834,15 @@ export default function FinanceDashboard() {
         <div className={`${card} overflow-hidden`}>
           <div className="p-6 border-b border-slate-100 dark:border-neutral-800 bg-slate-50/30 dark:bg-transparent">
             {/* Header Size increased to text-lg instead of text-sm */}
-            <h2 className={`text-lg font-bold tracking-tight ${title}`}>Yeni Tekrarlayan Motor (Yıl Sonu Odaklı)</h2>
-            <p className={`text-xs ${muted} mt-0.5`}>Sabit gelir ve giderlerin ay bazında dağılımı. Rakama veya kural ismine tıklayarak düzenleyin.</p>
+            <h2 className={`text-lg font-bold tracking-tight ${title}`}>{t('Yeni Tekrarlayan Motor (Yıl Sonu Odaklı)')}</h2>
+            <p className={`text-xs ${muted} mt-0.5`}>{t('Sabit gelir ve giderlerin ay bazında dağılımı. Rakama veya kural ismine tıklayarak düzenleyin.')}</p>
           </div>
           <div className="overflow-x-auto">
             {/* table-fixed and min-w to prevent cells from resizing wildly */}
             <table className="w-full text-sm text-left whitespace-nowrap table-fixed min-w-[1200px]">
               <thead className={`text-[11px] uppercase tracking-wider ${muted} border-b border-slate-100 dark:border-neutral-800`}>
                 <tr>
-                  <th className="sticky left-0 z-20 bg-white dark:bg-[#09090b] px-5 py-3 font-semibold w-[220px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)]">Kural / İşlem</th>
+                  <th className="sticky left-0 z-20 bg-white dark:bg-[#09090b] px-5 py-3 font-semibold w-[220px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)]">{t('Kural / İşlem')}</th>
                   {engineData.matrixColumns.map(m => <th key={m} className="px-4 py-3 font-semibold text-right w-[110px]">{m}</th>)}
                 </tr>
               </thead>
@@ -1997,7 +2002,7 @@ export default function FinanceDashboard() {
               <tfoot className="border-t-2 border-slate-200 dark:border-neutral-800 bg-slate-50/80 dark:bg-neutral-900/50">
                 <tr>
                   <td className={`sticky left-0 z-10 bg-slate-50/80 dark:bg-neutral-900/50 px-5 py-3.5 font-bold ${title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)]`}>
-                    Aylık Net
+                    {t('Aylık Net')}
                   </td>
                   {engineData.matrixColumns.map((m, idx) => {
                     const v = engineData.netFlows[idx] || 0;
@@ -2010,7 +2015,7 @@ export default function FinanceDashboard() {
                 </tr>
                 <tr>
                   <td className={`sticky left-0 z-10 bg-slate-50/80 dark:bg-neutral-900/50 px-5 py-3.5 font-bold ${title} shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_5px_-2px_rgba(255,255,255,0.02)] border-t border-slate-200/60 dark:border-neutral-800/60`}>
-                    Dönem Başı Nakit (Açılış)
+                    {t('Dönem Başı Nakit (Açılış)')}
                   </td>
                   {engineData.matrixColumns.map((m, idx) => {
                     let opening = baseCapital;
